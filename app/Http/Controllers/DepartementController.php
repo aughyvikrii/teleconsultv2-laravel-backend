@@ -42,7 +42,7 @@ class DepartementController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal menambahkan departemen, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -135,7 +135,7 @@ class DepartementController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal update departemen, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -169,7 +169,7 @@ class DepartementController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal hapus departemen, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,

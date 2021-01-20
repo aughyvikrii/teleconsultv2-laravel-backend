@@ -101,7 +101,7 @@ class BranchController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal menambahkan cabang, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -172,7 +172,7 @@ class BranchController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal update cabang, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -206,7 +206,7 @@ class BranchController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal hapus cabang, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,

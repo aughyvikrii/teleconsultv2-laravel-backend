@@ -51,7 +51,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal menambahkan user, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -148,7 +148,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal update user, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -182,7 +182,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal hapus user, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,

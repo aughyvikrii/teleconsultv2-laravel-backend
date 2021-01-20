@@ -41,7 +41,7 @@ class IdentityTypeController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal menambahkan tipe identitas, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -133,7 +133,7 @@ class IdentityTypeController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal update tipe identitas, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -167,7 +167,7 @@ class IdentityTypeController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal hapus tipe identitas, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,

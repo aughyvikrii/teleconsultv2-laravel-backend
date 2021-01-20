@@ -44,7 +44,7 @@ class SpecialistController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal menambahkan spesialis, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -139,7 +139,7 @@ class SpecialistController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal update spesialis, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -173,7 +173,7 @@ class SpecialistController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal hapus spesialis, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,

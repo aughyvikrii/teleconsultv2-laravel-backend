@@ -85,7 +85,7 @@ class PersonController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal menambahkan data, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -219,7 +219,7 @@ class PersonController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal update data, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,
@@ -253,7 +253,7 @@ class PersonController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal hapus person, silahkan coba lagi'
-            ], 403);
+            ]);
         } else {
             return response()->json([
                 'status' => true,

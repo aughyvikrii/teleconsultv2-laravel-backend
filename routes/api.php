@@ -9,6 +9,7 @@ use App\Http\Controllers\SpecialistController;
 use App\Http\Controllers\IdentityTypeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PersonController;
+use App\Http\Controllers\DoctorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -85,4 +86,12 @@ Route::group(['prefix' => 'person'], function(){
     Route::post('create', [PersonController::class, 'Create'])->name('PersonCreate');
     Route::put('update/{id}', [PersonController::class, 'Update'])->name('PersonUpdate');
     Route::delete('delete/{id}', [PersonController::class, 'Delete'])->name('PersonDelete');
+});
+
+Route::group(['prefix' => 'doctor'], function(){
+    Route::get('list', [DoctorController::class, 'List'])->name('DoctorList');
+    Route::get('detail/{id}', [DoctorController::class, 'Detail'])->name('DoctorDetail');
+    Route::post('create', [DoctorController::class, 'Create'])->name('DoctorCreate');
+    Route::put('update/{id}', [DoctorController::class, 'Update'])->name('DoctorUpdate');
+    Route::delete('delete/{id}', [DoctorController::class, 'Delete'])->name('DoctorDelete');
 });
