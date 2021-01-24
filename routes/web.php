@@ -21,16 +21,18 @@ Route::any('/', function(){
 
 Route::get('/verification/account/{code}/{token}', [AuthController::class, 'VerificationAccount']);
 
-Route::group(['prefix' => 'admin'], function(){
-    Route::get('/', function(){
-        return view('admin');
-    });
+Route::group(['middleware' => 'access:admin'], function(){
+    Route::group(['prefix' => 'admin'], function(){
+        Route::any('/', function(){
+            return view('admin');
+        });
 
-    Route::get('{any}', function(){
-        return view('admin');
-    })->where('any', '.*');
+        Route::get('{any}', function(){
+            return view('admin');
+        })->where('any', '^(?!api).*$');
+    });
 });
 
 Route::get('{any}', function () {
     return view('welcome');
-})->where('any', '.*');
+})->where('any', '^(?!api).*$');

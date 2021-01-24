@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
 use \App\Models\{Branch};
 
 class BranchController extends Controller
@@ -15,8 +18,13 @@ class BranchController extends Controller
      */
 
     public function List(Request $request) {
-        $list = Branch::orderBy('name','ASC')
-            ->paginate(25);
+        $list = Branch::orderBy('name','ASC');
+        
+        if($query = $request->input('query')) {
+            $list->whereRaw('LOWER(branches.code) LIKE LOWER(?) OR LOWER(branches.name) LIKE LOWER(?) ',["%$query%", "%$query%"]);
+        }
+
+        $list = $list->paginate($request->input('data_per_page', 10));
 
         return response()->json([
             'status' => true,
@@ -32,7 +40,12 @@ class BranchController extends Controller
      */
 
     public function Detail($branch_id) {
-        $branch = Branch::find($branch_id);
+        $branch = Branch::selectRaw('branches.bid
+                    ,branches.code, branches.company, branches.name, branches.npwp, branches.bank_name
+                    ,branches.account_number, branches.phone_number, branches.whatsapp_number, branches.is_active')
+                ->selectRaw("CONCAT('".asset('storage/img/branch')."/', branches.thumbnail) as thumbnail")
+                ->where('bid', $branch_id)
+                ->first();
 
         if(!$branch) {
             return response()->json([
@@ -72,7 +85,7 @@ class BranchController extends Controller
                 'status' => false,
                 'message' => 'Data tidak valid',
                 'errors' => $valid->errors(),
-            ], 400);
+            ]);
         }
 
         $thumbnail_name = null;
@@ -103,9 +116,29 @@ class BranchController extends Controller
                 'message' => 'Gagal menambahkan cabang, silahkan coba lagi'
             ]);
         } else {
+
+            if($image_64 = $request->input('thumbnail')) {
+                $extension = explode('/', explode(':', substr($image_64, 0, strpos($image_64, ';')))[1])[1];   // .jpg .png .pdf
+    
+                $replace = substr($image_64, 0, strpos($image_64, ',')+1); 
+              
+              // find substring fro replace here eg: data:image/png;base64,
+              
+               $image = str_replace($replace, '', $image_64); 
+                
+               $image = str_replace(' ', '+', $image); 
+               $imageName = $branch->bid.''.Str::random(10).'.'.$extension;
+               Storage::disk('public')->put('img/branch/'.$imageName, base64_decode($image));
+               $thumbnail_name = $imageName;
+               $branch->update([
+                   'thumbnail' => $thumbnail_name
+               ]);
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Berhasil menambahkan cabang',
+                'data' => $branch
             ]);
         }
     }
@@ -165,8 +198,9 @@ class BranchController extends Controller
             'espay_api_key' => $request->espay_api_key,
             'espay_password' => $request->espay_password,
             'espay_signature' => $request->espay_signature,
-            'thumbnail' => $thumbnail_name
         ]);
+
+        $old_thumbnail = @$branch->thumbnail;
 
         if(!$update) {
             return response()->json([
@@ -174,6 +208,27 @@ class BranchController extends Controller
                 'message' => 'Gagal update cabang, silahkan coba lagi'
             ]);
         } else {
+
+            if(($image_64 = $request->input('thumbnail')) && ( !$branch->thumbnail || !preg_match("/{$old_thumbnail}/", $request->input('thumbnail')) ) ) {
+                $extension = explode('/', explode(':', substr($image_64, 0, strpos($image_64, ';')))[1])[1];   // .jpg .png .pdf
+    
+                $replace = substr($image_64, 0, strpos($image_64, ',')+1); 
+              
+              // find substring fro replace here eg: data:image/png;base64,
+              
+               $image = str_replace($replace, '', $image_64); 
+              
+               $image = str_replace(' ', '+', $image); 
+               $imageName = $branch->deid.''.Str::random(10).'.'.$extension;
+               Storage::disk('public')->put('img/branch/'.$imageName, base64_decode($image));
+               $thumbnail_name = $imageName;
+               $branch->update([
+                   'thumbnail' => $thumbnail_name
+               ]);
+
+                Storage::disk('public')->delete('img/branch/'.$old_thumbnail);
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Berhasil update cabang',
@@ -199,7 +254,7 @@ class BranchController extends Controller
         }
 
         // Cek jika branch ini digunakan
-
+        $file_name = @$branch->thumbnail;
         $delete = $branch->delete();
 
         if(!$delete) {
@@ -208,6 +263,7 @@ class BranchController extends Controller
                 'message' => 'Gagal hapus cabang, silahkan coba lagi'
             ]);
         } else {
+            Storage::disk('public')->delete('img/branch/'.$file_name);
             return response()->json([
                 'status' => true,
                 'message' => 'Berhasil hapus cabang',

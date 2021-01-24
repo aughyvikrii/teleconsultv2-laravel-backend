@@ -175,35 +175,48 @@ class AuthController extends Controller
 
         if($valid->fails()) {
             return response()->json([
+                'status' => false,
                 'message' => 'parameter tidak tepat',
                 'errors' => $valid->errors()
-            ], 400);
+            ]);
         }
 
         $user = User::where('email', $request->email)->first();
 
         if(!$user) {
             return response()->json([
+                'status' => false,
                 'message' => 'email/password salah'
-            ], 400);
+            ]);
         }
         else if (!$user->verified_at) {
             return response()->json([
+                'status' => false,
                 'message' => 'Silahkan konfirmasi akun anda terlebih dahulu'
-            ], 400);
+            ]);
         }
 
         $credentials = $request->only('email', 'password');
 
         try {
             if (! $token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error' => 'invalid_credentials'], 400);
+                return response()->json([
+                    'status' => false,
+                    'message' => 'invalid_credentials'
+                ]);
             }
         } catch (JWTException $e) {
-            return response()->json(['error' => 'could_not_create_token'], 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'could_not_create_token'
+            ]);
         }
 
-        return response()->json(compact('token'));
+        return response()->json([
+            'status' => true,
+            'token' => $token,
+            'user' => $user
+        ]);
     }
 
     /**

@@ -41,7 +41,7 @@ Route::group(['prefix' => 'auth'], function(){
 });
 
 Route::group(['prefix' => 'branch'], function(){
-    Route::get('list', [BranchController::class, 'List'])->name('BranchList');
+    Route::match(['GET', 'POST'], 'list', [BranchController::class, 'List'])->name('BranchList');
     Route::get('detail/{id}', [BranchController::class, 'Detail'])->name('BranchDetail');
     Route::post('create', [BranchController::class, 'Create'])->name('BranchCreate');
     Route::put('update/{id}', [BranchController::class, 'Update'])->name('BranchUpdate');
@@ -49,7 +49,7 @@ Route::group(['prefix' => 'branch'], function(){
 });
 
 Route::group(['prefix' => 'departement'], function(){
-    Route::get('list', [DepartementController::class, 'List'])->name('DepartementList');
+    Route::match(['GET', 'POST'], 'list', [DepartementController::class, 'List'])->name('DepartementList');
     Route::get('detail/{id}', [DepartementController::class, 'Detail'])->name('DepartementDetail');
     Route::post('create', [DepartementController::class, 'Create'])->name('DepartementCreate');
     Route::put('update/{id}', [DepartementController::class, 'Update'])->name('DepartementUpdate');
@@ -57,7 +57,7 @@ Route::group(['prefix' => 'departement'], function(){
 });
 
 Route::group(['prefix' => 'specialist'], function(){
-    Route::get('list', [SpecialistController::class, 'List'])->name('SpecialistList');
+    Route::match(['GET', 'POST'], 'list', [SpecialistController::class, 'List'])->name('SpecialistList');
     Route::get('detail/{id}', [SpecialistController::class, 'Detail'])->name('SpecialistDetail');
     Route::post('create', [SpecialistController::class, 'Create'])->name('SpecialistCreate');
     Route::put('update/{id}', [SpecialistController::class, 'Update'])->name('SpecialistUpdate');
@@ -65,7 +65,7 @@ Route::group(['prefix' => 'specialist'], function(){
 });
 
 Route::group(['prefix' => 'identitytype'], function(){
-    Route::get('list', [IdentityTypeController::class, 'List'])->name('IdentityList');
+    Route::match(['GET', 'POST'], 'list', [IdentityTypeController::class, 'List'])->name('IdentityList');
     Route::get('detail/{id}', [IdentityTypeController::class, 'Detail'])->name('IdentityDetail');
     Route::post('create', [IdentityTypeController::class, 'Create'])->name('IdentityCreate');
     Route::put('update/{id}', [IdentityTypeController::class, 'Update'])->name('IdentityUpdate');
@@ -73,7 +73,7 @@ Route::group(['prefix' => 'identitytype'], function(){
 });
 
 Route::group(['prefix' => 'user'], function(){
-    Route::get('list', [UserController::class, 'List'])->name('UserList');
+    Route::match(['GET', 'POST'], 'list', [UserController::class, 'List'])->name('UserList');
     Route::get('detail/{id}', [UserController::class, 'Detail'])->name('UserDetail');
     Route::post('create', [UserController::class, 'Create'])->name('UserCreate');
     Route::put('update/{id}', [UserController::class, 'Update'])->name('UserUpdate');
@@ -81,7 +81,7 @@ Route::group(['prefix' => 'user'], function(){
 });
 
 Route::group(['prefix' => 'person'], function(){
-    Route::get('list', [PersonController::class, 'List'])->name('PersonList');
+    Route::match(['GET', 'POST'], 'list', [PersonController::class, 'List'])->name('PersonList');
     Route::get('detail/{id}', [PersonController::class, 'Detail'])->name('PersonDetail');
     Route::post('create', [PersonController::class, 'Create'])->name('PersonCreate');
     Route::put('update/{id}', [PersonController::class, 'Update'])->name('PersonUpdate');
@@ -89,7 +89,7 @@ Route::group(['prefix' => 'person'], function(){
 });
 
 Route::group(['prefix' => 'doctor'], function(){
-    Route::get('list', [DoctorController::class, 'List'])->name('DoctorList');
+    Route::match(['GET', 'POST'], 'list', [DoctorController::class, 'List'])->name('DoctorList');
     Route::get('detail/{id}', [DoctorController::class, 'Detail'])->name('DoctorDetail');
     Route::post('create', [DoctorController::class, 'Create'])->name('DoctorCreate');
     Route::put('update/{id}', [DoctorController::class, 'Update'])->name('DoctorUpdate');
