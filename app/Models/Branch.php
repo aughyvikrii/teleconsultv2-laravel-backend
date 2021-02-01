@@ -12,4 +12,9 @@ class Branch extends Model
     protected $primaryKey = 'bid';
     protected $guarded = ['bid'];
     public $timestamps = FALSE;
+
+
+    public function scopeActive($query, $active=true) {
+        return $query->where('branches.is_active',$active);
+    }
 }

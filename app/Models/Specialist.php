@@ -12,4 +12,8 @@ class Specialist extends Model
     protected $primaryKey = 'sid';
     protected $guarded = ['sid'];
     public $timestamps = FALSE;
+
+    public function scopeActive($query, $active=true) {
+        return $query->where('specialists.is_active',$active);
+    }
 }

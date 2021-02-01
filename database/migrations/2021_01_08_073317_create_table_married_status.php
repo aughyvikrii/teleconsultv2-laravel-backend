@@ -16,6 +16,7 @@ class CreateTableMarriedStatus extends Migration
         Schema::create('married_status', function (Blueprint $table) {
             $table->id('msid');
             $table->string('name');
+            $table->boolean('is_active')->default(true);
         });
     }
 

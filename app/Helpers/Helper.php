@@ -142,3 +142,62 @@ if(!function_exists('array_match_key')) {
         return array_intersect_key((array) $array, $flip);
     }
 }
+
+if(!function_exists('person_level')) {
+    function person_level($pid) {
+        if(is_object($pid)) {
+            $pid = @$pid->pid;
+        }
+
+        $query = \App\Models\Person::joinUser('left')
+                ->select('users.lid')
+                ->whereRaw('persons.pid = ?', [$pid])
+                ->first();
+        return $query->lid;
+    }
+}
+
+if(!function_exists('is_admin')) {
+    function is_admin($person) {
+        $level = person_level($person);
+        return $level === '1' ? true : false;
+    }
+}
+
+if(!function_exists('is_doctor')) {
+    function is_doctor($person) {
+        $level = person_level($person);
+        return $level === '2' ? true : false;
+    }
+}
+
+if(!function_exists('is_patient')) {
+    function is_patient($person) {
+        $level = person_level($person);
+        return $level === '3' ? true : false;
+    }
+}
+
+if(!function_exists('profile_pic')) {
+    function profile_pic($person) {
+        if($person->profile_pic) {
+            $file_name = $person->profile_pic;
+        } else {
+
+            $level = person_level($person);
+            if($level == '1') {
+                $file_name = 'admin.png';
+            }
+            else if ($level == '2') {
+                $file_name = $person->gid == '2' ? 'doctor-female.png' : 'doctor-male.png';
+            }
+            else if ($level == '3') {
+                $file_name = $person->gid == '2' ? 'patient-female.png' : 'patient-male.png';
+            }
+
+        }
+
+
+        return asset('storage/img/profile/'. $file_name);
+    }
+}

@@ -181,8 +181,11 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = User::where('email', $request->email)->first();
-
+        $user = User::joinPerson()
+            ->selectRaw('users.email, users.code, persons.full_name, users.verified_at')
+            ->where('email', $request->email)
+            ->first();
+            
         if(!$user) {
             return response()->json([
                 'status' => false,
@@ -202,13 +205,13 @@ class AuthController extends Controller
             if (! $token = JWTAuth::attempt($credentials)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'invalid_credentials'
+                    'message' => 'email/password salah'
                 ]);
             }
         } catch (JWTException $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'could_not_create_token'
+                'message' => 'gagal membuat token'
             ]);
         }
 

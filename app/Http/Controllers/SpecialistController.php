@@ -60,13 +60,20 @@ class SpecialistController extends Controller
      */
 
     public function List(Request $request) {
-        $list = Specialist::orderBy('alt_name','ASC');
 
-        if($query = $request->input('query')) {
-            $list->whereRaw('LOWER(title) LIKE LOWER(?) OR LOWER(alt_name) LIKE LOWER(?) ',["%$query%", "%$query%"]);
+        if($request->input('all_data')) {
+            $list = Specialist::selectRaw('specialists.sid, specialists.title, specialists.alt_name')
+                    ->orderBy('specialists.title')
+                    ->active()
+                    ->get();
+        } else {
+            $list = Specialist::active()->orderBy('alt_name','ASC');
+            if($query = $request->input('query')) {
+                $list->whereRaw('LOWER(title) LIKE LOWER(?) OR LOWER(alt_name) LIKE LOWER(?) ',["%$query%", "%$query%"]);
+            }
+    
+            $list = $list->paginate($request->input('data_per_page', 10));
         }
-
-        $list = $list->paginate($request->input('data_per_page', 10));
 
         return response()->json([
             'status' => true,

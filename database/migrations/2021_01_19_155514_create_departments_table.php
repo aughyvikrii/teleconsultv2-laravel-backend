@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDoctorsTable extends Migration
+class CreateDepartmentsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,30 +13,12 @@ class CreateDoctorsTable extends Migration
      */
     public function up()
     {
-        Schema::create('doctors', function (Blueprint $table) {
-            $table->id('doid');
-            $table->foreignId('pid')
-                ->references('pid')
-                ->on('persons');
-
-            $table->foreignId('bid')
-                ->references('bid')
-                ->on('branches');
-
-            $table->foreignId('deid')
-                ->references('deid')
-                ->on('departements');
-
-            $table->foreignId('sid')
-                ->nullable()
-                ->default(null)
-                ->references('sid')
-                ->on('specialists');
-
-            $table->integer('fee_consultation');
-
+        Schema::create('departments', function (Blueprint $table) {
+            $table->id('deid');
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->string('thumbnail')->nullable();
             $table->boolean('is_active')->default(true);
-
             $table->timestamp('created_at')->useCurrent();
             $table->foreignId('create_id')
                 ->references('uid')
@@ -60,6 +42,6 @@ class CreateDoctorsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('doctors');
+        Schema::dropIfExists('departments');
     }
 }

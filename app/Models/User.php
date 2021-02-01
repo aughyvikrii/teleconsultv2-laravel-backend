@@ -44,6 +44,11 @@ class User extends Authenticatable implements JWTSubject
         else return $user;
     }
 
+    public function scopeJoinPerson($query, $type='join'){
+        $join = ($type == 'join') ? 'join' : ( $type."join" );
+        return $query->$join('persons', 'persons.uid', '=', 'users.uid');
+    }
+
     public function scopeFullinfo($query) {
         return $query->leftjoin('persons', 'persons.uid', '=', 'users.uid')
             ->leftjoin('level', 'level.lid', '=', 'persons.lid')

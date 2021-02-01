@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use \App\Models\{Doctor, User, Person};
-use Illuminate\Support\Facades\DB;
+use \App\Models\{User, Person, Schedule};
+use Auth, DB;
+use JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class DoctorController extends Controller
 {
@@ -18,26 +20,52 @@ class DoctorController extends Controller
      */
 
     public function Create(Request $request) {
+        
         $valid = Validator::make($request->all(),[
-            'uid' => 'required_without:email|exists:users',
-            'email' => 'required_without:uid|email',
-            'password' => 'required_with:email',
-            'phone_number' => 'required_with:email',
-            'first_name' => 'required_with:email',
-            'gid' => 'required_with:email',
-            'birth_place' => 'required_with:email',
-            'birth_date' => 'required_with:email',
-            'address' => 'required_with:email',
-            'profile_pic' => 'required_with:email',
-            'rid' => 'required_with:email',
-            'msid' => 'required_with:email',
-            'tid' => 'required_with:email',
-            'identity_number' => 'required_with:email',
-            'itid' => 'required_with:email',
-            'bid' => 'required|exists:branches',
-            'deid' => 'required|exists:dokterts',
-            'sid' => 'required|exists:specialists',
-            'fee_consultation' => 'required'
+            'email' => 'required|email|unique:users',
+            'password' => 'required',
+            'display_name' => 'required',
+            'specialist' => 'required|exists:specialists,sid',
+            'phone_number' => 'required',
+            'gender' => 'required|in:male,female',
+            'birth_place' => 'required',
+            'birth_date' => 'required|date|date_format:Y-m-d',
+            'branch' => 'required|exists:branches,bid',
+            'department' => 'required|exists:departments,deid',
+            'weekday' => 'required|digits_between:0,6',
+            'fee' => 'required|numeric',
+            'start_hour' => 'required|date_format:H:i',
+            'end_hour' => 'required|date_format:H:i',
+            'duration' => 'required|numeric'
+        ],[
+            'email.required' => 'Masukan alamat email',
+            'email.email' => 'Format email tidak valid',
+            'email.unique' => 'Email sudah digunakan',
+            'password.required' => 'Masukan password',
+            'display.required' => 'Masukan nama tampilan',
+            'specialist.required' => 'Pilih spesialis dokter',
+            'specialist.exists' => 'Spesialis tidak valid',
+            'phone_number.required' => 'Masukan nomor telepon',
+            'gender.required' => 'Pilih jenis kelamin',
+            'gender.in' => 'Pilihan jenis kelamin tidak valid',
+            'birth_place.required' => 'Masukan tempat lahir',
+            'birth_date.required' => 'Masukan tanggal lahir',
+            'birth_date.date' =>  'Format tanggal tidak valid',
+            'birth_date.date_format' => 'Format tanggal tidak valid',
+            'branch.required' => 'Pilih cabang',
+            'branch.exists' => 'Cabang tidak valid',
+            'department.required' => 'Pilih departemen',
+            'department.exists' => 'Departemen tidak valid',
+            'weekday.required' => 'Pilih hari praktek',
+            'weekday.digits_between' => 'Pilihan hari tidak valid',
+            'fee.required' => 'Masukan tarif konsultasi',
+            'fee.numeric' => 'Format tarif hanya berupa angka',
+            'start_hour.required' => 'Masukan jam mulai praktek',
+            'start_hour.date_format' => 'Format jam tidak valid',
+            'end_hour.required' => 'Masukan jam selesai praktek',
+            'end_hour.date_format' => 'Format jam tidak valid',
+            'duration.required' => 'Masukan durasi praktek',
+            'duration.numeric' => 'Format durasi hanya berupa angka'
         ]);
 
         if($valid->fails()) {
@@ -45,96 +73,104 @@ class DoctorController extends Controller
                 'status' => false,
                 'message' => 'Data tidak valid',
                 'errors' => $valid->errors(),
-            ], 400);
-        }
-
-        DB::beginTransaction();
-
-        $profile_pic = null;
-
-        if(!$uid = $request->uid) {
-            // Create new account
-
-            $user = User::create([
-                'email' => $request->email,
-                'password' => bcrypt($request->password),
-                'phone_number' => format_phone($request->phone_number),
-                'lid' => 2, // Level doctor
-                'verified_at' => now(),
-                'create_id' => 1,
             ]);
-
-            if(!$user) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Proses mendaftar akun gagal, silahkan coba lagi!'
-                ]);
-            }
-            $user = User::find($user->uid);
-
-            $person = Person::create([
-                'uid'  => $user->uid,
-                'first_name' =>  $request->first_name,
-                'last_name' => $request->last_name,
-                'phone_number' => $user->phone_number,
-                'gid' => $request->gid,
-                'birth_place' => $request->birth_place,
-                'birth_date' => $request->birth_date,
-                'address' => $request->address,
-                'profile_pic' =>  $profile_pic,
-                'rid' => $request->rid,
-                'msid' => $request->msid,
-                'tid' => $request->tid,
-                'identity_number' => $request->identity_number,
-                'itid' => $request->itid,
-                'lid' => 2,
-                'create_id' => 1,
-            ]);
-
-            if(!$person) {
-                DB::rollBack();
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Proses menambah data diri gagal, silahkan coba lagi!'
-                ]);
-            }
-            $person = Person::find($person->pid);
-
-        } else {
-            $user = User::find($request->uid);
-            $person = Person::where('uid', $user->uid)->first();
         }
-
-        if($user->lid != '2') { // Tidak sama dengan level dokter
-            DB::rollBack();
+        
+        $phone_number = format_phone($request->phone_number);
+        if(Person::PhoneUsed($phone_number)) {
             return response()->json([
                 'status' => false,
-                'message' => 'Gagal menambah dokter, level user tidak sesuai!'
+                'message' => 'Data tidak valid',
+                'errors' => [
+                    'phone_number' => [
+                        'nomor telepon sudah digunakan'
+                    ]
+                ],
             ]);
         }
+        
+        DB::BeginTransaction();
 
-        $doctor = Doctor::create([
-            'pid' => $person->pid,
-            'bid' => $request->bid,
-            'deid' => $request->deid,
-            'sid' => $request->sid,
-            'fee_consultation' => $request->fee_consultation,
-            'create_id' => 1
+        $user = User::create([
+            'email' => $request->email,
+            'password' => bcrypt($request->input('password','1234')),
+            'phone_number' => $phone_number,
+            'lid' => 2,
+            'verified_at' => now()->format('Y-m-d H:i:s'),
+            'is_active' => true,
+            'create_id' => Auth::user()->uid,
+            'created_at' => now()->format('Y-m-d H:i:s')
         ]);
 
-        if(!$doctor) {
-            DB::rollBack();
+        if(!$user) {
             return response()->json([
                 'status' => false,
-                'message' => 'Gagal menambah dokter, silahkan coba lagi!'
+                'message' => 'Gagal membuat akun dokter, silahkan coba lagi!',
+            ]);
+        }
+
+        $person = Person::create([
+            'uid' => $user->uid,
+            'first_name' => $request->display_name,
+            'display_name' => $request->display_name,
+            'phone_number' => $phone_number,
+            'gid' => $request->gender == 'male' ? '1' : '2',
+            'birth_place' => $request->birth_place,
+            'birth_date' => $request->birth_date,
+            'address'  => '-',
+            'rid' => 9,
+            'msid' => 1,
+            'tid' => 1,
+            'identity_number' => '-',
+            'itid'  => 1,
+            'sid' => $request->specialist
+        ]);
+
+        if(!$person) {
+            DB::rollback();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menambah profil dokter, silahkan coba lagi!'
+            ]);
+        }
+
+        $schedule = Schedule::create([
+            'pid' => $person->pid,
+            'bid' => $request->branch,
+            'deid' => $request->department,
+            'weekday' =>  $request->weekday,
+            'fee' =>  $request->fee,
+            'start_hour' => $request->start_hour,
+            'end_hour' => $request->end_hour,
+            'duration' => $request->duration,
+            'create_id' => Auth::user()->uid,
+        ]);
+
+        if(!$schedule) {
+            DB::rollback();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menambah jadwal dokter, silahkan coba lagi!'
             ]);
         }
 
         DB::commit();
 
+        if($thumbnail = $request->thumbnail) {
+            $image = parent::saveProfilePicture($thumbnail, $person->pid.'-');
+            if($image_name = @$image['basename']) {
+                $person->update([
+                    'profile_pic' => $image_name
+                ]);
+            }
+        }
+
         return response()->json([
             'status' => true,
-            'message' => 'Berhasil menambahkan dokter',
+            'message' => 'Berhasil menambah data dokter',
+            'data' => [
+                'pid' => $person->pid,
+            ]
         ]);
     }
 
@@ -145,8 +181,21 @@ class DoctorController extends Controller
      */
 
     public function List(Request $request) {
-        $list = Doctor::getFullInfo()
-                ->paginate(25);
+        $list = Person::selectRaw('persons.pid, persons.display_name, users.email, persons.phone_number, persons.created_at')
+                ->selectRaw("profile_pic('".asset('storage/img/profile')."', persons.profile_pic, users.lid, persons.gid) as profile_pic")
+                ->isDoctor();
+
+        if($query = $request->input('query')) {
+            $query = strtolower($query);
+            $list->whereRaw('(persons.pid = ? OR LOWER(persons.display_name) LIKE ? OR LOWER(users.email) LIKE ? OR persons.phone_number LIKE ?)', [
+                @intval($query), "%{$query}%", "%{$query}%", "%{$query}%"
+            ]);
+        }
+
+        if(!$request->input('paginate')) $list = $list->get();
+        else {
+            $list = $list->paginate($request->input('data_per_page', 10));
+        }
 
         return response()->json([
             'status' => true,
@@ -199,7 +248,7 @@ class DoctorController extends Controller
 
         $valid = Validator::make($request->all(),[
             'bid' => 'required|exists:branches',
-            'deid' => 'required|exists:departements',
+            'deid' => 'required|exists:departments',
             'sid' => 'required|exists:specialists',
             'fee_consultation' => 'required',
             'is_active' => 'required|boolean',

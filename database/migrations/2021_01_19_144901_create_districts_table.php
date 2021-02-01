@@ -21,7 +21,7 @@ class CreateDistrictsTable extends Migration
                 ->on('cities');
 
             $table->string('name');
-            
+            $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->useCurrent();
             $table->foreignId('create_id')
                 ->default('0')

@@ -23,7 +23,7 @@ class CreateProvincesTable extends Migration
                 
             $table->string('iso_code', 10);
             $table->string('name');
-            
+            $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->useCurrent();
             $table->foreignId('create_id')
                 ->default('0')

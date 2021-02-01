@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCitiesTable extends Migration
+class CreateSchedulesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,17 +13,29 @@ class CreateCitiesTable extends Migration
      */
     public function up()
     {
-        Schema::create('cities', function (Blueprint $table) {
-            $table->id('cid', 50);
+        Schema::create('schedules', function (Blueprint $table) {
+            $table->id('scid');
 
-            $table->foreignId('pvid')
-                ->references('pvid')
-                ->on('provinces');
+            $table->foreignId('pid')
+                ->references('pid')
+                ->on('persons');
 
-            $table->string('name');
-            $table->string('type');
-            $table->boolean('is_active')->default(true);
+            $table->foreignId('bid')
+                ->references('bid')
+                ->on('branches');
+
+            $table->foreignId('deid')
+                ->references('deid')
+                ->on('departments');
+            
+            $table->integer('weekday');
+            $table->integer('fee');
+            $table->string('start_hour', 15);
+            $table->string('end_hour', 15);
+            $table->integer('duration');
+
             $table->timestamp('created_at')->useCurrent();
+            
             $table->foreignId('create_id')
                 ->default('0')
                 ->references('uid')
@@ -36,7 +48,9 @@ class CreateCitiesTable extends Migration
                 ->default(null)
                 ->references('uid')
                 ->on('users');
+                
             $table->timestamp('deleted_at')->nullable(true)->default(null);
+            $table->boolean('is_active')->default(true);
         });
     }
 
@@ -47,6 +61,6 @@ class CreateCitiesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cities');
+        Schema::dropIfExists('schedules');
     }
 }

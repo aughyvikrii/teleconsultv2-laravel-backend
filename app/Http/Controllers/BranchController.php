@@ -18,13 +18,21 @@ class BranchController extends Controller
      */
 
     public function List(Request $request) {
-        $list = Branch::orderBy('name','ASC');
         
-        if($query = $request->input('query')) {
-            $list->whereRaw('LOWER(branches.code) LIKE LOWER(?) OR LOWER(branches.name) LIKE LOWER(?) ',["%$query%", "%$query%"]);
-        }
+        if($request->input('all_data')) {
+            $list = Branch::selectRaw('branches.bid, branches.name')
+                ->active()
+                ->orderBy('branches.name', 'ASC')
+                ->get();
+        } else {
+            $list = Branch::orderBy('name','ASC');
+        
+            if($query = $request->input('query')) {
+                $list->whereRaw('LOWER(branches.code) LIKE LOWER(?) OR LOWER(branches.name) LIKE LOWER(?) ',["%$query%", "%$query%"]);
+            }
 
-        $list = $list->paginate($request->input('data_per_page', 10));
+            $list = $list->paginate($request->input('data_per_page', 10));
+        }
 
         return response()->json([
             'status' => true,

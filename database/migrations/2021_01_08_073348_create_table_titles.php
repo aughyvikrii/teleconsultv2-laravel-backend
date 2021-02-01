@@ -17,6 +17,7 @@ class CreateTableTitles extends Migration
             $table->id('tid');
             $table->string('short');
             $table->string('name');
+            $table->boolean('is_active')->default(true);
         });
     }
 

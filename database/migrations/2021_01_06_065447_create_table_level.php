@@ -17,6 +17,7 @@ class CreateTableLevel extends Migration
             $table->id('lid');
             $table->string('code', 10)->nullable(false);
             $table->string('name')->nullable(false);
+            $table->boolean('is_active')->default(true);
         });
     }
 

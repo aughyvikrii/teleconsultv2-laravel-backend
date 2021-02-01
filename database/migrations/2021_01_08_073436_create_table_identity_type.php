@@ -16,6 +16,7 @@ class CreateTableIdentityType extends Migration
         Schema::create('identity_type', function (Blueprint $table) {
             $table->id('itid');
             $table->string('name');
+            $table->boolean('is_active')->default(true);
         });
     }
 

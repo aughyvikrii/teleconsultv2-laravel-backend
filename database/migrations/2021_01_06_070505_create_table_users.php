@@ -25,6 +25,7 @@ class CreateTableUsers extends Migration
                     ->comment('Level ID');
             $table->timestamp('verified_at')->nullable(true)->default(null);
             $table->string('verified_code')->nullable(true)->default(null);
+            $table->boolean('is_active')->default(true);
             
         });
     }

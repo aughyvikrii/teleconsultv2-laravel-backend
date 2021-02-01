@@ -17,6 +17,7 @@ class CreateTablePersons extends Migration
             $table->id('pid');
 
             $table->foreignId('uid')
+                ->nullable()
                 ->references('uid')
                 ->on('users')
                 ->comment('uid on table users');
@@ -26,6 +27,8 @@ class CreateTablePersons extends Migration
             $table->string('last_name', 155)->default(null)->nullable(true);
 
             $table->string('full_name', 255)->nullable(true)->default(null);
+
+            $table->string('display_name', 255)->nullable(true)->default(null);
 
             $table->string('phone_number', 155)->nullable(true)->default(null);
 
@@ -55,8 +58,6 @@ class CreateTablePersons extends Migration
                 ->on('married_status')
                 ->comment('msid on table married_status');
 
-            $table->string('mrn')->nullable(true)->default(null);
-
             $table->foreignId('tid')
                 ->nullable()
                 ->references('tid')
@@ -71,18 +72,8 @@ class CreateTablePersons extends Migration
                 ->on('identity_type')
                 ->comment('itid on table identity_type');
 
-            $table->foreignId('lid')
-                ->references('lid')
-                ->on('level')
-                ->comment('lid on table level');
-
-            $table->foreignId('family_id')
-                ->nullable()
-                ->references('pid')
-                ->on('persons')
-                ->comment('Family ID');
-
             $table->text('allergy')->nullable(true)->default(null);
+            $table->boolean('is_active')->default(true);
         });
     }
 

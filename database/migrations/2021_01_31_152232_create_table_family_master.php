@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCitiesTable extends Migration
+class CreateTableFamilyMaster extends Migration
 {
     /**
      * Run the migrations.
@@ -13,16 +13,8 @@ class CreateCitiesTable extends Migration
      */
     public function up()
     {
-        Schema::create('cities', function (Blueprint $table) {
-            $table->id('cid', 50);
-
-            $table->foreignId('pvid')
-                ->references('pvid')
-                ->on('provinces');
-
-            $table->string('name');
-            $table->string('type');
-            $table->boolean('is_active')->default(true);
+        Schema::create('family_master', function (Blueprint $table) {
+            $table->id('fmid');
             $table->timestamp('created_at')->useCurrent();
             $table->foreignId('create_id')
                 ->default('0')
@@ -37,6 +29,7 @@ class CreateCitiesTable extends Migration
                 ->references('uid')
                 ->on('users');
             $table->timestamp('deleted_at')->nullable(true)->default(null);
+            $table->boolean('is_active')->default(true);
         });
     }
 
@@ -47,6 +40,6 @@ class CreateCitiesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cities');
+        Schema::dropIfExists('family_master');
     }
 }

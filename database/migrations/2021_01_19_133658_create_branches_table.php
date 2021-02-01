@@ -23,6 +23,7 @@ class CreateBranchesTable extends Migration
             $table->string('account_number')->nullable();
             $table->string('phone_number')->nullable();
             $table->string('whatsapp_number')->nullable();
+            $table->string('thumbnail')->nullable();
             $table->string('his_api_production')->nullable();
             $table->string('his_api_development')->nullable();
             $table->string('his_api_user')->nullable();
@@ -45,6 +46,7 @@ class CreateBranchesTable extends Migration
                 ->references('uid')
                 ->on('users');
             $table->timestamp('deleted_at')->nullable(true)->default(null);
+            $table->boolean('is_active')->default(true);
         });
     }
 

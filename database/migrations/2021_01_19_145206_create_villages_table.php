@@ -21,7 +21,7 @@ class CreateVillagesTable extends Migration
                 ->on('districts');
 
             $table->string('name');
-            
+            $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->useCurrent();
             $table->foreignId('create_id')
                 ->default('0')

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddThumbnailToBranchesTable extends Migration
+class CreateJournalKeyTables extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,11 @@ class AddThumbnailToBranchesTable extends Migration
      */
     public function up()
     {
-        Schema::table('branches', function (Blueprint $table) {
-            $table->string('thumbnail')->nullable();
+        Schema::create('journal_key', function (Blueprint $table) {
+            $table->id();
+            $table->string('key_name');
+            $table->string('table_name');
+            $table->timestamps();
         });
     }
 
@@ -25,8 +28,6 @@ class AddThumbnailToBranchesTable extends Migration
      */
     public function down()
     {
-        Schema::table('branches', function (Blueprint $table) {
-            $table->dropColumn('thumbnail');
-        });
+        Schema::dropIfExists('journal_key');
     }
 }

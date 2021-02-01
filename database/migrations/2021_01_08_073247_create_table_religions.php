@@ -16,6 +16,7 @@ class CreateTableReligions extends Migration
         Schema::create('religions', function (Blueprint $table) {
             $table->id('rid');
             $table->string('name');
+            $table->boolean('is_active')->default(true);
         });
     }
 

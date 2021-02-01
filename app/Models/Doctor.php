@@ -21,8 +21,8 @@ class Doctor extends Model
         return $query->join('branches', 'branches.bid', '=', 'doctors.bid');
     }
 
-    public function scopeJoinDepartement($query) {
-        return $query->join('departements', 'departements.deid', '=', 'doctors.deid');
+    public function scopeJoinDepartment($query) {
+        return $query->join('departments', 'departments.deid', '=', 'doctors.deid');
     }
 
     public function scopeJoinSpecialist($query) {
@@ -37,11 +37,11 @@ class Doctor extends Model
         return $query->joinPerson()
                 ->joinUser()
                 ->joinBranch()
-                ->joinDepartement()
+                ->joinDepartment()
                 ->joinSpecialist()
                 ->selectRaw('doctors.doid, doctors.fee_consultation')
                 ->selectRaw('persons.pid, persons.full_name as name')
-                ->selectRaw('departements.deid, departements.name as departement')
+                ->selectRaw('departments.deid, departments.name as departement')
                 ->selectRaw('branches.bid, branches.name as branch')
                 ->selectRaw('specialists.sid, specialists.title, specialists.alt_name as title_name')
                 ->selectRaw('doctors.is_active');

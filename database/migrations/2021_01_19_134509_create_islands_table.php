@@ -16,7 +16,7 @@ class CreateIslandsTable extends Migration
         Schema::create('islands', function (Blueprint $table) {
             $table->id('iid');
             $table->string('name');
-            
+            $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->useCurrent();
             $table->foreignId('create_id')
                 ->references('uid')

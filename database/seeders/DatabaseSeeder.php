@@ -27,7 +27,10 @@ class DatabaseSeeder extends Seeder
         $migrate->up();
 
         $this->call([
-            SeedTablePersons::class
+            SeedTableDepartments::class,
+            SeedTableBranches::class,
+            SeedTableSpecialists::class,
+            SeedTablePersons::class,
         ]);
     }
 }

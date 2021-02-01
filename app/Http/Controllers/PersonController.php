@@ -101,8 +101,27 @@ class PersonController extends Controller
      */
 
     public function List(Request $request) {
-        $list = Person::orderBy('full_name','ASC')
-            ->paginate(25);
+        $list = Person::joinUser()
+                ->selectRaw('persons.pid, persons.full_name, users.email, persons.phone_number, persons.created_at, users.uid')
+                ->selectRaw("profile_pic('".asset('storage/img/profile')."'::varchar, persons.profile_pic, users.lid, persons.gid) as profile_pic");
+
+        if($query = $request->input('query')) {
+            $query = strtolower($query);
+            $list->whereRaw('LOWER(persons.full_name) LIKE ? OR persons.phone_number LIKE ? OR LOWER(users.email) LIKE ?',[
+                $query, $query, $query,
+            ]);
+        }
+
+        if($type = $request->input('type')) {
+            if($type === 'patient') {
+                $list->whereRaw('users.lid = ?', ['3']);
+            }
+            else if($type === 'doctor') {
+                $list->whereRaw('users.lid = ?', ['2']);
+            }
+        }
+        
+        $list = $list->paginate($request->input('data_per_page', 10));
 
         return response()->json([
             'status' => true,
@@ -118,7 +137,10 @@ class PersonController extends Controller
      */
 
     public function Detail($person_id) {
-        $person = Person::find($person_id);
+        $person = Person::joinFullInfo()
+        ->selectRaw('persons.*, users.email')
+        ->where('persons.pid', $person_id)
+        ->first();
 
         if(!$person) {
             return response()->json([
@@ -126,11 +148,21 @@ class PersonController extends Controller
                 'message' => 'Data person tidak ditemukan'
             ]);
         }
+        
+        $person->profile_pic = profile_pic($person);
 
+        $family = Person::selectRaw('family.full_name, family.pid')
+                    ->joinFamily()
+                    ->where('persons.pid', $person->pid)
+                    ->get();
+        
         return response()->json([
             'status' => true,
             'message' => 'Data person ditemukan',
-            'data' =>  $person
+            'data' =>  [
+                'person' => $person,
+                'family' => $family
+            ]
         ]);
 
     }
