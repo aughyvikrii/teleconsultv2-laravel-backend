@@ -13,6 +13,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\ReligionController;
 use App\Http\Controllers\MarriedStatusController;
 use App\Http\Controllers\TitleController;
+use App\Http\Controllers\ScheduleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +102,10 @@ Route::group(['middleware' => 'access:admin'],  function(){
         Route::delete('delete/{id}', [DoctorController::class, 'Delete'])->name('DoctorDelete');
         Route::match(['GET', 'POST'], '{id}/schedules', [DoctorController::class, 'Schedules'])->name('DoctorSchedules');
         Route::post('{id}/schedule/add', [DoctorController::class, 'ScheduleAdd'])->name('ScheduleAdd');
+    });
+
+    Route::group(['prefix' => 'schedule'], function(){
+        Route::match(['GET', 'POST'], 'list', [ScheduleController::class, 'List'])->name('ScheduleList');
     });
     
     Route::group(['prefix' => 'religion'], function(){

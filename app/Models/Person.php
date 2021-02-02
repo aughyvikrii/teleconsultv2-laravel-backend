@@ -80,7 +80,7 @@ class Person extends Model
                 ->$join('persons as family', 'family.pid', '=', 'family_tree.pid');
     }
 
-    public function scopePhoneUsed($query, $phone_number) {
-        return $query->where('phone_number', $phone_number)->first();
+    public static function PhoneUsed($phone_number) {
+        return Person::where('phone_number', $phone_number)->first();
     }
 }

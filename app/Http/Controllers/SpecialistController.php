@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Auth, DB;
 use \App\Models\{Specialist};
+
 
 class SpecialistController extends Controller
 {
@@ -30,14 +32,27 @@ class SpecialistController extends Controller
                 'status' => false,
                 'message' => 'Data tidak valid',
                 'errors' => $valid->errors(),
-            ], 400);
+            ]);
+        }
+
+        if(Specialist::titleExist($request->title)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Spesialis dengan titel ini sudah ada',
+                'errors' => [
+                    'title' => [
+                        'titel sudah digunakan'
+                    ]
+                ],
+            ]);
         }
 
         $thumbnail_name = null;
 
         $specialist = Specialist::create([
             'title' => $request->title,
-            'alt_name' => $request->alt_name
+            'alt_name' => $request->alt_name,
+            'create_id' => Auth::user()->uid,
         ]);
 
         if(!$specialist) {

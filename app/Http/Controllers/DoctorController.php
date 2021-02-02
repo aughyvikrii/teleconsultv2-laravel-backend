@@ -28,7 +28,7 @@ class DoctorController extends Controller
             'display_name' => 'required',
             'specialist' => 'required|exists:specialists,sid',
             'phone_number' => 'required',
-            'gender' => 'required|in:male,female',
+            'gender' => 'required|in:1,2,3',
             'birth_place' => 'required',
             'birth_date' => 'required|date|date_format:Y-m-d',
             'branch' => 'required|exists:branches,bid',
@@ -78,7 +78,7 @@ class DoctorController extends Controller
         }
         
         $phone_number = format_phone($request->phone_number);
-        if(Person::PhoneUsed($phone_number)) {
+        if($result = Person::PhoneUsed($phone_number)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Data tidak valid',
@@ -343,7 +343,7 @@ class DoctorController extends Controller
     public function Schedules($person_id, Request $request) {
         $schedule = Schedule::selectRaw('schedules.scid as schedule_id, branches.bid as branch_id,branches.name as branch
                     , departments.deid as department_id, departments.name as department, schedules.weekday, weekday_translate(schedules.weekday) as weekday_alt
-                    , schedules.start_hour, schedules.end_hour, schedules.duration, schedules.fee')
+                    , schedules.start_hour, schedules.end_hour, schedules.duration, schedules.fee, schedules.is_active')
                     ->joinPerson()->joinBranch()->joinDepartment()->joinCreator()
                     ->whereRaw('persons.pid = ?', [$person_id])
                     ->get();

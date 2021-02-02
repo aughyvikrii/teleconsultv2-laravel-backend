@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use \App\Models\{Department};
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Auth, DB;
 
 class DepartmentController extends Controller
 {
@@ -38,7 +39,8 @@ class DepartmentController extends Controller
         $department = Department::create([
             'name' => $request->name,
             'thumbnail' => $thumbnail_name,
-            'description' => $request->description
+            'description' => $request->description,
+            'create_id' => Auth::user()->uid,
         ]);
 
         if(!$department) {

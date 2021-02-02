@@ -16,4 +16,8 @@ class Specialist extends Model
     public function scopeActive($query, $active=true) {
         return $query->where('specialists.is_active',$active);
     }
+
+    public static function titleExist($title) {
+        return Specialist::whereRaw('LOWER(title) = ?', [strtolower($title)])->first();
+    }
 }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Auth, DB;
 
 use \App\Models\{Branch};
 
@@ -115,7 +116,8 @@ class BranchController extends Controller
             'espay_api_key' => $request->espay_api_key,
             'espay_password' => $request->espay_password,
             'espay_signature' => $request->espay_signature,
-            'thumbnail' => $thumbnail_name
+            'thumbnail' => $thumbnail_name,
+            'create_id' => Auth::user()->uid,
         ]);
 
         if(!$branch) {
