@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use \App\Models\{User, Person, Schedule};
 use Auth, DB;
+use Carbon\Carbon;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
@@ -32,7 +33,7 @@ class DoctorController extends Controller
             'birth_date' => 'required|date|date_format:Y-m-d',
             'branch' => 'required|exists:branches,bid',
             'department' => 'required|exists:departments,deid',
-            'weekday' => 'required|digits_between:0,6',
+            'weekday' => 'required|digits_between:1,7',
             'fee' => 'required|numeric',
             'start_hour' => 'required|date_format:H:i',
             'end_hour' => 'required|date_format:H:i',
@@ -211,8 +212,15 @@ class DoctorController extends Controller
      */
 
     public function Detail($doctor_id) {
-        $doctor = Doctor::GetFullInfoByDoid($doctor_id);
-
+        $doctor = Person::joinGender()
+                ->selectRaw('persons.pid, persons.display_name, users.email, persons.phone_number, persons.created_at, genders.name as gender, persons.birth_date
+                , persons.birth_place')
+                ->selectRaw("age_trans(persons.birth_date) as age, date_translate(persons.birth_date) as birth_date_alt")
+                ->selectRaw("profile_pic('".asset('storage/img/profile')."', persons.profile_pic, users.lid, persons.gid) as profile_pic")
+                ->isDoctor()
+                ->whereRaw('persons.pid = ?', [$doctor_id])
+                ->first();
+                
         if(!$doctor) {
             return response()->json([
                 'status' => false,
@@ -220,10 +228,15 @@ class DoctorController extends Controller
             ]);
         }
 
+        // $doctor->birth_date_alt = Carbon::parse($doctor->birth_date)->translatedFormat('l, d F Y');
+
         return response()->json([
             'status' => true,
             'message' => 'Data dokter ditemukan',
-            'data' =>  $doctor
+            'data' =>  [
+                'person' => $doctor,
+                'family' => []
+            ]
         ]);
 
     }
@@ -325,5 +338,97 @@ class DoctorController extends Controller
                 'message' => 'Berhasil hapus dokter',
             ]);
         }
+    }
+
+    public function Schedules($person_id, Request $request) {
+        $schedule = Schedule::selectRaw('schedules.scid as schedule_id, branches.bid as branch_id,branches.name as branch
+                    , departments.deid as department_id, departments.name as department, schedules.weekday, weekday_translate(schedules.weekday) as weekday_alt
+                    , schedules.start_hour, schedules.end_hour, schedules.duration, schedules.fee')
+                    ->joinPerson()->joinBranch()->joinDepartment()->joinCreator()
+                    ->whereRaw('persons.pid = ?', [$person_id])
+                    ->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => $schedule
+        ]);
+    }
+
+    public function ScheduleAdd($person_id, Request $request) {
+        $valid = Validator::make($request->all(), [
+            'branch' => 'required|exists:branches,bid',
+            'department' => 'required|exists:departments,deid',
+            'weekday' => 'required|digits_between:1,7',
+            'fee' => 'required|numeric',
+            'start_hour' => 'required|date_format:H:i',
+            'end_hour' => 'required|date_format:H:i',
+            'duration' => 'required|numeric'
+        ],[
+            'branch.required' => 'Pilih cabang',
+            'branch.exists' => 'Cabang tidak valid',
+            'department.required' => 'Pilih departemen',
+            'department.exists' => 'Departemen tidak valid',
+            'weekday.required' => 'Pilih hari praktek',
+            'weekday.digits_between' => 'Pilihan hari tidak valid',
+            'fee.required' => 'Masukan tarif konsultasi',
+            'fee.numeric' => 'Format tarif hanya berupa angka',
+            'start_hour.required' => 'Masukan jam mulai praktek',
+            'start_hour.date_format' => 'Format jam tidak valid',
+            'end_hour.required' => 'Masukan jam selesai praktek',
+            'end_hour.date_format' => 'Format jam tidak valid',
+            'duration.required' => 'Masukan durasi praktek',
+            'duration.numeric' => 'Format durasi hanya berupa angka'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data tidak valid',
+                'errors' => $valid->errors(),
+            ]);
+        }
+
+        $person = Person::selectRaw('persons.*')
+                    ->IsDoctor()
+                    ->where('persons.pid', $person_id)
+                    ->first();
+
+        if(!$person) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Dokter tidak valid!'
+            ]);
+        }
+
+        DB::BeginTransaction();
+
+        $schedule = Schedule::create([
+            'pid' => $person->pid,
+            'bid' => $request->branch,
+            'deid' => $request->department,
+            'weekday' =>  $request->weekday,
+            'fee' =>  $request->fee,
+            'start_hour' => $request->start_hour,
+            'end_hour' => $request->end_hour,
+            'duration' => $request->duration,
+            'create_id' => Auth::user()->uid,
+        ]);
+
+        if(!$schedule) {
+            DB::rollback();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menambah jadwal dokter, silahkan coba lagi!'
+            ]);
+        }
+
+        DB::commit();
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil menambah data',
+            'data' => [
+                'schedule_id' => $schedule->scid
+            ]
+        ]);
     }
 }
