@@ -77,7 +77,7 @@ class SpecialistController extends Controller
     public function List(Request $request) {
 
         if($request->input('all_data')) {
-            $list = Specialist::selectRaw('specialists.sid, specialists.title, specialists.alt_name')
+            $list = Specialist::selectRaw('specialists.sid as specialist_id, specialists.title, specialists.alt_name')
                     ->orderBy('specialists.title')
                     ->active()
                     ->get();

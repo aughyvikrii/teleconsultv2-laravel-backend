@@ -182,7 +182,7 @@ class DoctorController extends Controller
      */
 
     public function List(Request $request) {
-        $list = Person::selectRaw('persons.pid, persons.display_name, users.email, persons.phone_number, persons.created_at')
+        $list = Person::selectRaw('persons.pid as doctor_id, persons.display_name, users.email, persons.phone_number, persons.created_at')
                 ->selectRaw("profile_pic('".asset('storage/img/profile')."', persons.profile_pic, users.lid, persons.gid) as profile_pic")
                 ->isDoctor();
 

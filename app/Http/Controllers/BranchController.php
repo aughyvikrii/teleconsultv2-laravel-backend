@@ -21,7 +21,7 @@ class BranchController extends Controller
     public function List(Request $request) {
         
         if($request->input('all_data')) {
-            $list = Branch::selectRaw('branches.bid, branches.name')
+            $list = Branch::selectRaw('branches.bid as branch_id, branches.name')
                 ->active()
                 ->orderBy('branches.name', 'ASC')
                 ->get();
