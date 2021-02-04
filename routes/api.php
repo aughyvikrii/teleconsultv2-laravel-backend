@@ -100,8 +100,8 @@ Route::group(['middleware' => 'access:admin'],  function(){
         Route::post('create', [DoctorController::class, 'Create'])->name('DoctorCreate');
         Route::put('update/{id}', [DoctorController::class, 'Update'])->name('DoctorUpdate');
         Route::delete('delete/{id}', [DoctorController::class, 'Delete'])->name('DoctorDelete');
-        Route::match(['GET', 'POST'], '{id}/schedules', [DoctorController::class, 'Schedules'])->name('DoctorSchedules');
-        Route::post('{id}/schedule/add', [DoctorController::class, 'ScheduleAdd'])->name('ScheduleAdd');
+        Route::match(['GET', 'POST'], '{id}/schedules', [ScheduleController::class, 'DoctorSchedule'])->name('DoctorSchedules');
+        Route::post('{id}/schedule/add', [ScheduleController::class, 'DoctorScheduleAdd'])->name('DoctorScheduleAdd');
     });
 
     Route::group(['prefix' => 'schedule'], function(){

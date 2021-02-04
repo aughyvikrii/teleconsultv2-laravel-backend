@@ -61,7 +61,7 @@ class DepartmentController extends Controller
               
                $image = str_replace(' ', '+', $image); 
                $imageName = $department->deid.''.Str::random(10).'.'.$extension;
-               Storage::disk('public')->put('img/department/'.$imageName, base64_decode($image));
+               Storage::disk('public')->put('image/department/'.$imageName, base64_decode($image));
                $thumbnail_name = $imageName;
                $department->update([
                    'thumbnail' => $thumbnail_name
@@ -89,8 +89,8 @@ class DepartmentController extends Controller
                     ->orderBy('departments.name', 'ASC')
                     ->get();
         } else {
-            $list = Department::selectRaw('departments.*')
-            ->selectRaw("CONCAT('".asset('storage/img/department')."/', departments.thumbnail) as thumbnail");
+            $list = Department::selectRaw('departments.deid as department_id, departments.name, departments.description')
+            ->selectRaw("department_pic(departments.thumbnail) as thumbnail");
         
             if($query = $request->input('query')) {
                 $list->whereRaw('LOWER(departments.name) LIKE LOWER(?) OR LOWER(departments.description) LIKE LOWER(?) ',["%$query%", "%$query%"]);

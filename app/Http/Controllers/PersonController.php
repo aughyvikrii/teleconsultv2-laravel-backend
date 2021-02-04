@@ -103,7 +103,7 @@ class PersonController extends Controller
     public function List(Request $request) {
         $list = Person::joinUser()
                 ->selectRaw('persons.pid, persons.full_name, users.email, persons.phone_number, persons.created_at, users.uid')
-                ->selectRaw("profile_pic('".asset('storage/img/profile')."'::varchar, persons.profile_pic, users.lid, persons.gid) as profile_pic");
+                ->selectRaw("patient_pic(persons.profile_pic, persons.gid::int) as profile_pic");
 
         if($query = $request->input('query')) {
             $query = strtolower($query);
@@ -138,7 +138,7 @@ class PersonController extends Controller
 
     public function Detail($person_id) {
         $person = Person::joinFullInfo()
-        ->selectRaw('persons.*, users.email')
+        ->selectRaw('persons.*, users.email, patient_pic(persons.profile_pic) as profile_pic')
         ->where('persons.pid', $person_id)
         ->first();
 
@@ -148,8 +148,6 @@ class PersonController extends Controller
                 'message' => 'Data person tidak ditemukan'
             ]);
         }
-        
-        $person->profile_pic = profile_pic($person);
 
         $family = Person::selectRaw('family.full_name, family.pid')
                     ->joinFamily()

@@ -21,12 +21,14 @@ class BranchController extends Controller
     public function List(Request $request) {
         
         if($request->input('all_data')) {
-            $list = Branch::selectRaw('branches.bid as branch_id, branches.name')
+            $list = Branch::selectRaw('branches.bid as branch_id, branches.name, branch_pic(branches.thumbnail) as thumbnail')
                 ->active()
                 ->orderBy('branches.name', 'ASC')
                 ->get();
         } else {
-            $list = Branch::orderBy('name','ASC');
+            $list = Branch::selectRaw("branches.bid as branch_id, branches.code, branches.name
+                    , branch_pic(branches.thumbnail) as thumbnail, branches.is_active")
+                    ->orderBy('name','ASC');
         
             if($query = $request->input('query')) {
                 $list->whereRaw('LOWER(branches.code) LIKE LOWER(?) OR LOWER(branches.name) LIKE LOWER(?) ',["%$query%", "%$query%"]);
@@ -49,10 +51,10 @@ class BranchController extends Controller
      */
 
     public function Detail($branch_id) {
-        $branch = Branch::selectRaw('branches.bid
+        $branch = Branch::selectRaw('branches.bid as branch_id
                     ,branches.code, branches.company, branches.name, branches.npwp, branches.bank_name
                     ,branches.account_number, branches.phone_number, branches.whatsapp_number, branches.is_active')
-                ->selectRaw("CONCAT('".asset('storage/img/branch')."/', branches.thumbnail) as thumbnail")
+                ->selectRaw(" branch_pic(branches.thumbnail) as thumbnail")
                 ->where('bid', $branch_id)
                 ->first();
 
@@ -138,7 +140,7 @@ class BranchController extends Controller
                 
                $image = str_replace(' ', '+', $image); 
                $imageName = $branch->bid.''.Str::random(10).'.'.$extension;
-               Storage::disk('public')->put('img/branch/'.$imageName, base64_decode($image));
+               Storage::disk('public')->put('image/branch/'.$imageName, base64_decode($image));
                $thumbnail_name = $imageName;
                $branch->update([
                    'thumbnail' => $thumbnail_name
@@ -219,7 +221,8 @@ class BranchController extends Controller
             ]);
         } else {
 
-            if(($image_64 = $request->input('thumbnail')) && ( !$branch->thumbnail || !preg_match("/{$old_thumbnail}/", $request->input('thumbnail')) ) ) {
+            $image_64 = $request->input('thumbnail');
+            if( preg_match('/data:image/', $image_64) && preg_match('/base64/', $image_64) ) {
                 $extension = explode('/', explode(':', substr($image_64, 0, strpos($image_64, ';')))[1])[1];   // .jpg .png .pdf
     
                 $replace = substr($image_64, 0, strpos($image_64, ',')+1); 
@@ -230,13 +233,13 @@ class BranchController extends Controller
               
                $image = str_replace(' ', '+', $image); 
                $imageName = $branch->deid.''.Str::random(10).'.'.$extension;
-               Storage::disk('public')->put('img/branch/'.$imageName, base64_decode($image));
+               Storage::disk('public')->put('image/branch/'.$imageName, base64_decode($image));
                $thumbnail_name = $imageName;
                $branch->update([
                    'thumbnail' => $thumbnail_name
                ]);
 
-                Storage::disk('public')->delete('img/branch/'.$old_thumbnail);
+                Storage::disk('public')->delete('image/branch/'.$old_thumbnail);
             }
 
             return response()->json([
