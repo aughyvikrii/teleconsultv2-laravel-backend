@@ -62,6 +62,76 @@ class ScheduleController extends Controller
         ]);
     }
 
+    public function Update($schedule_id, Request $request) {
+        $valid = Validator::make($request->all(), [
+            'branch' => 'required|exists:branches,bid',
+            'department' => 'required|exists:departments,deid',
+            'weekday' => 'required|digits_between:1,7',
+            'fee' => 'required|numeric',
+            'start_hour' => 'required|date_format:H:i',
+            'end_hour' => 'required|date_format:H:i',
+            'duration' => 'required|numeric'
+        ],[
+            'branch.required' => 'Pilih cabang',
+            'branch.exists' => 'Cabang tidak valid',
+            'department.required' => 'Pilih departemen',
+            'department.exists' => 'Departemen tidak valid',
+            'weekday.required' => 'Pilih hari praktek',
+            'weekday.digits_between' => 'Pilihan hari tidak valid',
+            'fee.required' => 'Masukan tarif konsultasi',
+            'fee.numeric' => 'Format tarif hanya berupa angka',
+            'start_hour.required' => 'Masukan jam mulai praktek',
+            'start_hour.date_format' => 'Format jam tidak valid',
+            'end_hour.required' => 'Masukan jam selesai praktek',
+            'end_hour.date_format' => 'Format jam tidak valid',
+            'duration.required' => 'Masukan durasi praktek',
+            'duration.numeric' => 'Format durasi hanya berupa angka'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data tidak valid',
+                'errors' => $valid->errors(),
+            ]);
+        }
+
+        $schedule = Schedule::find($schedule_id);
+        if(!$schedule) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Jadwal praktek tidak ditemukan'
+            ]);
+        };
+
+        DB::BeginTransaction();
+
+        $update = $schedule->update([
+            'bid' => $request->branch,
+            'deid' => $request->department,
+            'weekday' =>  $request->weekday,
+            'fee' =>  $request->fee,
+            'start_hour' => $request->start_hour,
+            'end_hour' => $request->end_hour,
+            'duration' => $request->duration,
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$update) {
+            DB::rollback();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update jadwal dokter, silahkan coba lagi!'
+            ]);
+        }
+
+        DB::commit();
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil update data',
+        ]);
+    }
+
     public function DoctorSchedule($person_id, Request $request) {
         $schedule = Schedule::selectRaw('schedules.scid as schedule_id, branches.bid as branch_id,branches.name as branch
                     , departments.deid as department_id, departments.name as department, schedules.weekday, id_weekday(schedules.weekday) as weekday_alt

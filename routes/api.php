@@ -106,6 +106,7 @@ Route::group(['middleware' => 'access:admin'],  function(){
 
     Route::group(['prefix' => 'schedule'], function(){
         Route::match(['GET', 'POST'], 'list', [ScheduleController::class, 'List'])->name('ScheduleList');
+        Route::put('{id}', [ScheduleController::class, 'Update'])->name('ScheduleUpdate');
     });
     
     Route::group(['prefix' => 'religion'], function(){
