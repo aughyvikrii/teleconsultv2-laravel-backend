@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Libraries\Whatsapp;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+
+use App\Libraries\Whatsapp;
+use App\Models\{User, Person, FamilyMaster, FamilyTree};
 
 class AuthController extends Controller
 {
@@ -25,48 +26,136 @@ class AuthController extends Controller
 
     public function Register(Request $request) {
         $valid = Validator::make($request->all(),[
-            'email' => 'required|email',
-            'phone_number' => 'required',
-            'password' => 'required'
+            'first_name' => 'required',
+            'contact' => 'required',
+            'password' => 'required',
+            'birth_date_d' => 'required|min:1|max:31',
+            'birth_date_m' => 'required|min:1|max:12',
+            'birth_date_y' => 'required|max:'.date('Y'),
+            'gender' => 'required|exists:genders,gid'
         ],[
-            'email.required' => 'Masukan alamat email',
-            'phone_number.required' => 'Masukan nomor telepon',
-            'password.required' => 'Masukan password'
+            'first_name.required' => 'Masukan nama depan',
+            'contact.required' => 'Masukan email/no hp',
+            'password.required' => 'Masukan password',
+            'birth_date_d.required' => 'Masukan tanggal lahir',
+            'birth_date_d.min' => 'Tanggal lahir tidak valid',
+            'birth_date_d.max' => 'Tanggal lahir tidak valid',
+            'birth_date_m.required' => 'Masukan bulan lahir',
+            'birth_date_m.min' => 'Bulan lahir tidak valid',
+            'birth_date_m.max' => 'Bulan lahir tidak valid',
+            'birth_date_y.required' => 'Masukan tahun lahir',
+            'birth_date_y.max' => 'Tahun lahir tidak valid',
+            'gender.required' => 'Pilih jenis kelamin',
+            'gender.exists' => 'Jenis kelamin tidak valid'
         ]);
 
         if($valid->fails()) {
             return response()->json([
+                'status' =>  false,
                 'message' => 'parameter tidak tepat',
                 'errors' => $valid->errors()
-            ], 400);
+            ]);
         }
 
-        $phone_number = format_phone($request->phone_number);
+        $contact = $request->input('contact');
+        if(preg_match('/@/', $contact)) $contact_type = 'email';
+        else $contact_type = 'phone_number';
+        $phone_number = format_phone($contact);
 
-        if(User::emailExist($request->email)) {
-            return response()->json([
-                'message' => 'email sudah digunakan',
-                'errors' => ['email'=> ['email sudah digunakan']]
-            ], 400);
+        if($contact_type === 'email') {
+            $valid = Validator::make($request->only('contact'), [ 'contact' => 'email:rfc,dns' ],[ 'contact.email' => 'Alamat email tidak valid' ]);
+            if($valid->fails()) {
+                return response()->json([
+                    'status' =>  false,
+                    'message' => 'parameter tidak tepat',
+                    'errors' => $valid->errors()
+                ]);
+            }
+
+            if(User::emailExist($contact)) {
+                return response()->json([
+                    'status' =>  false,
+                    'message' => 'email sudah digunakan',
+                    'errors' => ['contact'=> ['email sudah digunakan']]
+                ]);
+            }
+
+        } else {
+            if (User::phoneExist($phone_number)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Nomor telepon sudah digunakan',
+                    'errors' => ['contact'=> ['Nomor telepon sudah digunakan']]
+                ]);
+            }
         }
-        else if (User::phoneExist($phone_number)) {
-            return response()->json([
-                'message' => 'Nomor telepon sudah digunakan',
-                'errors' => ['phone_number'=> ['Nomor telepon sudah digunakan']]
-            ], 400);
-        }
+
+        DB::beginTransaction();
 
         $user = User::create([
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'phone_number' => $phone_number,
+            'email' => ($contact_type==='email' ? $contact : ''),
+            'phone_number' => ($contact_type!=='email' ? $phone_number : ''), 
             'lid'   => 3, // Level id member
         ]);
 
         if(!$user) {
             return response()->json([
+                'status' => false,
                 'message' => 'Pendaftaran gagal, silahkan coba lagi!'
-            ], 400);
+            ]);
+        }
+
+        $birth_date = date('Y-m-d', strtotime(
+            $request->birth_date_y . '-'. $request->birth_date_m . '-'. $request->birth_date_d
+        ));
+
+        $person = Person::create([
+            'uid' => $user->uid,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'phone_number' => ($contact_type!=='email' ? $phone_number : ''), 
+            'gid' => $request->gender,
+            'birth_date' =>  $birth_date,
+            'create_id' => $user->uid,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$person) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Pendaftaran gagal, silahkan coba lagi!'
+            ]);
+        }
+
+        $family_master = FamilyMaster::create([
+            'create_id' => $user->uid,
+            'created_at'  => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$family_master) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Pendaftaran gagal, silahkan coba lagi!'
+            ]);
+        }
+
+        $family_tree = FamilyTree::create([
+            'fmid' => $family_master->fmid,
+            'pid' => $person->pid,
+            'create_id' => $user->uid,
+            'created_at'  => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$family_tree) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Pendaftaran gagal, silahkan coba lagi!'
+            ]);
         }
 
         $user = User::find($user->uid);
@@ -81,25 +170,24 @@ class AuthController extends Controller
         $app_name = config('app.name');
         $link = URL::to('verification/account/'.$user->code.'/'.$verif_code);
 
-        $message = "Hallo, terimakasih telah mendaftar di *_aplikasi {$app_name}_*";
-        $message .= "\nBerikut adalah link konfirmasi akun anda:\n";
-        $message .= "\n{$link}";
-        $message .= "\n\nJika anda tidak melakukan pendaftaran, abaikan pesan ini.";
-        $message .= "\nTerimakasih.";
-        
-        $send = Whatsapp::send($phone_number,$message);
-        $message = "Pendaftaran berhasil";
-
-        if(empty(@$send['data']['message_id'])) {
-            // Kirim Email
-        } else {
+        if($contact_type === 'phone_number') {
+            $message = "Hallo, terimakasih telah mendaftar di *_aplikasi {$app_name}_*";
+            $message .= "\nBerikut adalah link konfirmasi akun anda:\n";
+            $message .= "\n{$link}";
+            $message .= "\n\nJika anda tidak melakukan pendaftaran, abaikan pesan ini.";
+            $message .= "\nTerimakasih.";
+            
+            $send = Whatsapp::send($phone_number,$message);
             $message = 'Silahkan cek aplikasi <span class="text-success">WhatsApp</span> anda untuk melakukan verifikasi';
+            
+        } else {
+            $message = "Kirim email";
         }
-
+        DB::commit();
         return response()->json([
-            'status' => 201,
+            'status' => true,
             'message' => $message
-        ], 201);
+        ]);
     }
 
     /**
@@ -181,8 +269,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = User::joinPerson()
-            ->selectRaw('users.email, users.code, persons.full_name, users.verified_at')
+        $user = User::selectRaw('users.email, users.code, users.verified_at')
             ->where('email', $request->email)
             ->first();
             
@@ -215,10 +302,20 @@ class AuthController extends Controller
             ]);
         }
 
+        $redirect = '/home';
+        if($user->lid === '1') $redirect = '/admin';
+        else if ($user->lid === '2') $redirect = '/doctor';
+
+        $user = User::joinPerson()
+        ->selectRaw('users.email, users.code, persons.full_name, users.verified_at')
+        ->where('email', $request->email)
+        ->first();
+
         return response()->json([
             'status' => true,
             'token' => $token,
-            'user' => $user
+            'user' => $user,
+            'redirect' => $redirect
         ]);
     }
 
@@ -249,10 +346,14 @@ class AuthController extends Controller
             ]);
         }
         
+        $token = JWTAuth::getToken();
+        $token = JWTAuth::refresh($token);
+        
         return response()->json([
             'status' => true,
             'data' => [
                 'user' => $user,
+                'token' => $token
             ],
         ]);
     }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use \App\Models\{Person};
+use \App\Models\{Person, Village};
 
 class PersonController extends Controller
 {
@@ -290,5 +290,85 @@ class PersonController extends Controller
                 'message' => 'Berhasil hapus person',
             ]);
         }
+    }
+
+    public function living_area(Request $request) {
+        $list = Village::fullJoin()
+                ->selectRaw('villages.vid as village_id, initcap(villages.name) as village,
+                districts.did as distric_id, initcap(districts.name) as distric,
+                cities.cid as city_id, initcap(cities.name) as city,
+                provinces.pvid as province_id, initcap(provinces.name) as province')
+                ->orderBy('provinces.name','ASC');
+                // ->orderBy([
+                //     'a.name' => 'ASC',
+                //     'b.name' => 'ASC',
+                //     'c.name' => 'ASC',
+                //     'd.name' => 'ASC'
+                // ]);
+        
+        if($query = $request->input('query')) {
+            $query = strtolower($query);
+            $likeQuery = "%$query%";
+            $list->whereRaw('LOWER(villages.name) LIKE ? OR LOWER(districts.name) LIKE ? OR LOWER(cities.name) LIKE ? OR LOWER(provinces.name) LIKE ?', [
+                $likeQuery, $likeQuery, $likeQuery, $likeQuery
+            ]);
+        }
+
+        if($village_id = $request->input('village_id')) {
+            $list->whereRaw('villages.vid = ?', [$village_id]);
+        }
+
+        if($request->all_data) {
+            $list = $list->get();
+        } else {
+            $list = $list->paginate(25);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil mendapatkan data',
+            'data' => $list
+        ]);
+    }
+
+
+    public function FamilyUpdate($pid = null, Request $request) {
+        $valid = Validator::make($request->all(), [
+            'title' => 'required|exists:titles,tid',
+            'gender' => 'required|exists:genders,gid',
+            'first_name' =>  'required',
+            'identity_type' => 'required|exists:identity_type,itid',
+            'phone_number' => 'required',
+            'birth_place' => 'required',
+            'birth_date' => 'required|date|date_format:Y-m-d',
+            'married_status' => 'required|exists:married_status,msid',
+            'religion' => 'required|exists:religions,rid',
+            'village_id' => 'required|exists:villages,vid',
+            'address' => 'required'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Input tidak valid',
+                'errors' => $valid->errors()
+            ]);
+        }
+
+        $person = Person::whereRaw('uid = ?', [Auth::user()->uid])->first();
+
+        if($pid) {
+
+        } else {
+            $person = Person::find(Auth::user()->)
+        }
+
+        $phone_number = format_phone($request->phone_number);
+
+        if($exists = Person::phoneExist($phone_number)) {
+            dd($exists);
+        }
+
+        dd("GOW");
     }
 }

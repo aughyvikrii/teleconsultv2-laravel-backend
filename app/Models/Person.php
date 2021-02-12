@@ -83,4 +83,9 @@ class Person extends Model
     public static function PhoneUsed($phone_number) {
         return Person::where('phone_number', $phone_number)->first();
     }
+
+    public static function phoneExist($phone) {
+        $person = Person::where('phone_number',$phone)->first();
+        return $person ? $person : false ;
+    }
 }
