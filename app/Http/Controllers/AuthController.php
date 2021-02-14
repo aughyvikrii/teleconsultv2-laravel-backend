@@ -32,7 +32,7 @@ class AuthController extends Controller
             'birth_date_d' => 'required|min:1|max:31',
             'birth_date_m' => 'required|min:1|max:12',
             'birth_date_y' => 'required|max:'.date('Y'),
-            'gender' => 'required|exists:genders,gid'
+            // 'gender' => 'required|exists:genders,gid'
         ],[
             'first_name.required' => 'Masukan nama depan',
             'contact.required' => 'Masukan email/no hp',
@@ -53,7 +53,7 @@ class AuthController extends Controller
             return response()->json([
                 'status' =>  false,
                 'message' => 'parameter tidak tepat',
-                'errors' => $valid->errors()
+                'errors' => $valid->errors(),
             ]);
         }
 
@@ -116,7 +116,7 @@ class AuthController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'phone_number' => ($contact_type!=='email' ? $phone_number : ''), 
-            'gid' => $request->gender,
+            // 'gid' => $request->gender,
             'birth_date' =>  $birth_date,
             'create_id' => $user->uid,
             'created_at' => date('Y-m-d H:i:s')
