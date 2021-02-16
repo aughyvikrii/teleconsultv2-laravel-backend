@@ -158,6 +158,8 @@ class AuthController extends Controller
             ]);
         }
 
+        $person->update(['fmid' => $family_master->fmid]);
+
         $user = User::find($user->uid);
 
         $code = [
@@ -187,6 +189,110 @@ class AuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => $message
+        ]);
+    }
+
+    /**
+     * Login
+     * 
+     * @parameter   email       string
+     * @parameter   password    string
+     * 
+     * @return json
+     */
+
+    public function Login(Request $request) {
+        $valid = Validator::make($request->all(),[
+            'contact' => 'required',
+            'password' => 'required'
+        ],[
+            'contact.required' => 'Masukan email/nomor telepon',
+            'password.required' => 'Masukan password'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'parameter tidak tepat',
+                'errors' => $valid->errors()
+            ]);
+        }
+        $contact = $request->contact;
+        if(preg_match('/@/', $contact)) {
+            $type = 'email';
+            $user = User::selectRaw('users.email, users.code, users.verified_at')
+            ->where('email', $contact)
+            ->first();
+        }
+        else {
+            $type = 'phone_number';
+            $contact = format_phone($contact);
+            $user = User::selectRaw('users.email, users.code, users.verified_at')
+            ->where('phone_number', $contact)
+            ->first();
+        }
+            
+        if(!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => ($type === 'email' ? 'Email' : 'Nomor Telepon').'/Password salah',
+            ]);
+        }
+        else if (!$user->verified_at) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Silahkan konfirmasi akun anda terlebih dahulu'
+            ]);
+        }
+
+        $credentials = [
+            $type => $contact,
+            'password' => $request->password,
+        ];
+
+        try {
+            if (! $token = JWTAuth::attempt($credentials)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'email/password salah'
+                ]);
+            }
+        } catch (JWTException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'gagal membuat token'
+            ]);
+        }
+
+        $redirect = '/home';
+        if($user->lid === '1') $redirect = '/admin';
+        else if ($user->lid === '2') $redirect = '/doctor';
+
+        $user = User::joinPerson()
+        ->selectRaw('users.code, users.email, users.phone_number
+                    , persons.first_name, persons.last_name, persons.last_name, persons.display_name,persons.tid as title_id
+                    , persons.gid as gender_id, persons.itid as identitytype_id, persons.identity_number, persons.birth_date
+                    , persons.birth_date, persons.msid as married_status_id, persons.rid as religion_id, persons.vid as village_id, persons.address
+                    , CASE WHEN users.lid = 2 THEN patient_pic(persons.profile_pic) ELSE doctor_pic(persons.profile_pic) END AS profile_pic
+                    , users.verified_at, users.created_at as register_at')
+        ->where("users.$type", $contact)
+        ->first();
+
+        $complete_info = true;
+        foreach($user->getAttributes() as $key => $val) {
+            if(!$val) {
+                $complete_info = false;
+                break;
+            }
+        }
+
+        $user->complete_info = $complete_info;
+
+        return response()->json([
+            'status' => true,
+            'token' => $token,
+            'user' => $user,
+            'redirect' => $redirect
         ]);
     }
 
@@ -244,82 +350,6 @@ class AuthController extends Controller
     }
 
     /**
-     * Login
-     * 
-     * @parameter   email       string
-     * @parameter   password    string
-     * 
-     * @return json
-     */
-
-    public function Login(Request $request) {
-        $valid = Validator::make($request->all(),[
-            'email' => 'required|email',
-            'password' => 'required'
-        ],[
-            'email.required' => 'Masukan alamat email',
-            'password.required' => 'Masukan password'
-        ]);
-
-        if($valid->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'parameter tidak tepat',
-                'errors' => $valid->errors()
-            ]);
-        }
-
-        $user = User::selectRaw('users.email, users.code, users.verified_at')
-            ->where('email', $request->email)
-            ->first();
-            
-        if(!$user) {
-            return response()->json([
-                'status' => false,
-                'message' => 'email/password salah'
-            ]);
-        }
-        else if (!$user->verified_at) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Silahkan konfirmasi akun anda terlebih dahulu'
-            ]);
-        }
-
-        $credentials = $request->only('email', 'password');
-
-        try {
-            if (! $token = JWTAuth::attempt($credentials)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'email/password salah'
-                ]);
-            }
-        } catch (JWTException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'gagal membuat token'
-            ]);
-        }
-
-        $redirect = '/home';
-        if($user->lid === '1') $redirect = '/admin';
-        else if ($user->lid === '2') $redirect = '/doctor';
-
-        $user = User::joinPerson()
-        ->selectRaw('users.email, users.code, persons.full_name, users.verified_at')
-        ->where('email', $request->email)
-        ->first();
-
-        return response()->json([
-            'status' => true,
-            'token' => $token,
-            'user' => $user,
-            'redirect' => $redirect
-        ]);
-    }
-
-    /**
      * User
      * Need Auth
      * 
@@ -340,11 +370,25 @@ class AuthController extends Controller
             return response()->json(['token_absent'], $e->getStatusCode());
         }
 
-        if($user->lid != '1') {
-            $user = array_match_key($user, [
-                'code', 'email', 'phone_number',
-            ]);
+        $user = User::joinPerson()
+        ->selectRaw('users.code, users.email, users.phone_number
+                    , persons.first_name, persons.last_name, persons.last_name, persons.tid as title_id, persons.gid as gender_id, persons.itid as identitytype_id
+                    , persons.identity_number, persons.birth_date, persons.birth_date, persons.msid as married_status_id, persons.rid as religion_id
+                    , persons.vid as village_id, persons.address
+                    , CASE WHEN users.lid = 2 THEN patient_pic(persons.profile_pic) ELSE doctor_pic(persons.profile_pic) END AS profile_pic
+                    , users.verified_at, users.created_at as register_at')
+        ->where("users.uid", $user->uid)
+        ->first();
+
+        $complete_info = true;
+        foreach($user->getAttributes() as $key => $val) {
+            if(!$val) {
+                $complete_info = false;
+                break;
+            }
         }
+
+        $user->complete_info = $complete_info;
         
         $token = JWTAuth::getToken();
         $token = JWTAuth::refresh($token);

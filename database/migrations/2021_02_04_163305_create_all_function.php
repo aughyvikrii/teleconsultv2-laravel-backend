@@ -84,7 +84,7 @@ class CreateAllFunction extends Migration
                 LANGUAGE plpgsql
             AS $function$
             begin
-                if picture = \'\' then
+                if picture = \'\' OR picture IS NULL then
                     if picture = \'\' and gid is null then picture = config(\'doctor_pic_male\');
                     elsif gid = 1 then picture = config(\'doctor_pic_male\');
                     elsif gid = 2 then picture = config(\'doctor_pic_female\');
@@ -103,7 +103,7 @@ class CreateAllFunction extends Migration
                 LANGUAGE plpgsql
             AS $function$
             begin
-                if picture = \'\' then
+                if picture = \'\' OR picture IS NULL then
                     if picture = \'\' and gid is null then picture = config(\'patient_pic_male\');
                     elsif gid = 1 then picture = config(\'patient_pic_male\');
                     elsif gid = 2 then picture = config(\'patient_pic_female\');

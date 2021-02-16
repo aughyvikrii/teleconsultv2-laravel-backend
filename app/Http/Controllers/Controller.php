@@ -42,6 +42,6 @@ class Controller extends BaseController
     }
 
     public function saveProfilePicture($data, $filename=false, $appendExt = true, $withUniq = true) {
-        return self::storeImageB64($data, 'images/profile/', $filename, $appendExt, $withUniq);
+        return self::storeImageB64($data, 'image/profile/', $filename, $appendExt, $withUniq);
     }
 }

@@ -104,6 +104,7 @@ Route::group(['middleware' => 'access'],  function(){
     });
 
     Route::group(['prefix' => 'family'], function(){
+        Route::match(['GET', 'POST'], 'list', [PersonController::class, 'FamilyList'])->name('FamilyList');
         Route::put('update/{code?}', [PersonController::class, 'FamilyUpdate']);
     });
     

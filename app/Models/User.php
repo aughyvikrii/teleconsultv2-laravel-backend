@@ -49,6 +49,15 @@ class User extends Authenticatable implements JWTSubject
         return $query->$join('persons', 'persons.uid', '=', 'users.uid');
     }
 
+    public static function emailIUsed($email) {
+        return User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
+    }
+
+    public static function phoneIsUsed($phone) {
+        $phone = format_phone($phone);
+        return User::where('phone_number', $phone)->first();
+    }
+
     public function scopeFullinfo($query) {
         return $query->leftjoin('persons', 'persons.uid', '=', 'users.uid')
             ->leftjoin('level', 'level.lid', '=', 'persons.lid')

@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use \App\Models\{Person, Village};
+use \App\Models\{Person, Village, User};
+use Auth, DB;
 
 class PersonController extends Controller
 {
@@ -338,13 +339,16 @@ class PersonController extends Controller
             'gender' => 'required|exists:genders,gid',
             'first_name' =>  'required',
             'identity_type' => 'required|exists:identity_type,itid',
-            'phone_number' => 'required',
+            // 'phone_number' => 'required',
             'birth_place' => 'required',
-            'birth_date' => 'required|date|date_format:Y-m-d',
+            'birth_date_d' => 'required|numeric',
+            'birth_date_m' => 'required|numeric',
+            'birth_date_y' => 'required|numeric',
             'married_status' => 'required|exists:married_status,msid',
             'religion' => 'required|exists:religions,rid',
             'village_id' => 'required|exists:villages,vid',
-            'address' => 'required'
+            'address' => 'required',
+            'profile_pic' => 'required',
         ]);
 
         if($valid->fails()) {
@@ -355,20 +359,131 @@ class PersonController extends Controller
             ]);
         }
 
-        $person = Person::whereRaw('uid = ?', [Auth::user()->uid])->first();
+        $user_id = Auth::user()->uid;
+        $user = User::find($user_id);
 
-        if($pid) {
+        $person = Person::where('uid', $user_id)->first();
 
-        } else {
-            $person = Person::find(Auth::user()->)
+        if(!$person) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User tidak ditemukan'
+            ]);
+        }
+        $phone_number = format_phone($request->input('phone_number'));
+        if($person->phone_number) {
+            if(!$request->email) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Input tidak valid',
+                    'errors' => [ 'email' => ['Masukan alamat email'] ]
+                ]);
+            }
+
+            if($validEmail = User::emailIUsed($request->email)) {
+                if($validEmail->uid != $user_id) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Input tidak valid',
+                        'errors' => [ 'email' => ['Alamat email sudah digunakan'] ]
+                    ]);
+                }
+            }
+        }
+        
+        if (Auth::user()->email) {
+            if(!$request->phone_number) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Input tidak valid',
+                    'errors' => [ 'phone_number' => ['Masukan nomor telepon'] ]
+                ]);
+            }
+
+            if($validPhone = User::phoneIsUsed($phone_number)) {
+                if($validPhone->uid != $user_id) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Input tidak valid',
+                        'errors' => [ 'phone_number' => ['Nomor telepon sudah digunakan'] ]
+                    ]);
+                }
+            }
         }
 
-        $phone_number = format_phone($request->phone_number);
+        $birth_date = $request->input('birth_date_y') . "-" . $request->input('birth_date_m') . "-" . $request->input('birth_date_d');
 
-        if($exists = Person::phoneExist($phone_number)) {
-            dd($exists);
+        DB::BeginTransaction();
+        
+        $update = $person->update([
+            'first_name' => $request->input('first_name'),
+            'last_name' => $request->input('last_name'),
+            'phone_number' => ( $person->phone_number ? $person->phone_number : $phone_number ),
+            'gid' => $request->input('gender'),
+            'birth_place' => $request->input('birth_place'),
+            'birth_date' => $birth_date,
+            'address' => $request->input('address'),
+            'rid' => $request->input('religion'),
+            'msid' => $request->input('married_status'),
+            'tid' => $request->input('title'),
+            'identity_number' => $request->input('identity_number'),
+            'itid' => $request->input('identity_type'),
+            'vid' => $request->input('village_id'),
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$user->email) $user->update(['email' => $request->email]);
+        if(!$user->phone_number) $user->update(['phone_number' => $phone_number]);
+
+        if(!$update) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update informasi, silahkan coba lagi',
+            ]);
         }
 
-        dd("GOW");
+        $upload_pic = parent::saveProfilePicture($request->input('profile_pic'), $person->fmid."-".uniqid() );
+
+        if(!$profile_pic = @$upload_pic['basename']) {
+            DB::rollback();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal upload foto, silahkan coba foto lain'
+            ]);
+        }
+
+        $update = $person->update([
+            'profile_pic' => $profile_pic,
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$update) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update foto profil, silahkan coba lagi',
+            ]);
+        }
+
+        DB::commit();
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil update informasi'
+        ]);
+    }
+
+    public function FamilyList(Request $request) {
+        $user = Auth::user();
+        $person = Person::where('uid', $user->uid)->first();
+
+        $list = Person::selectRaw('persons.full_name, id_date(persons.birth_date) as birth_date, id_age(persons.birth_date) as age
+                , patient_pic(persons.profile_pic) as profile_pic, persons.pid as person_id
+                , persons.phone_number')
+            ->where('fmid', $person->fmid)
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => $list
+        ]);
     }
 }
