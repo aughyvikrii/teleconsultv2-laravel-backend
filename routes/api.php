@@ -41,6 +41,7 @@ use App\Http\Controllers\ScheduleController;
 Route::group(['prefix' => 'auth'], function(){
     Route::post('register', [AuthController::class, 'Register'])->name('Register');
     Route::post('login', [AuthController::class, 'Login'])->name('Login');
+    Route::post('resend_link_verif', [AuthController::class, 'ResendLinkVerification'])->name('ResendLinkVerification');
     Route::get('user', [AuthController::class, 'User'])->name('User')->middleware('jwt.verify');
 });
 
@@ -105,6 +106,8 @@ Route::group(['middleware' => 'access'],  function(){
 
     Route::group(['prefix' => 'family'], function(){
         Route::match(['GET', 'POST'], 'list', [PersonController::class, 'FamilyList'])->name('FamilyList');
+        Route::post('add', [PersonController::class, 'FamilyAdd'])->name('FamilyAdd');
+        Route::get('detail/{id}', [PersonController::class, 'FamilyDetail'])->name('FamilyDetail');
         Route::put('update/{code?}', [PersonController::class, 'FamilyUpdate']);
     });
     

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Auth;
 
 class Person extends Model
 {
@@ -26,7 +27,11 @@ class Person extends Model
                 ->joinReligion()
                 ->joinMarriedStatus()
                 ->joinTitle()
-                ->joinIdentityType('left');
+                ->joinIdentityType('left')
+                ->joinVillage('left')
+                ->joinDistrict('left')
+                ->joinCity('left')
+                ->joinProvince('left');
     }
 
     public function scopeJoinUser($query, $type='join') {
@@ -80,6 +85,26 @@ class Person extends Model
                 ->$join('persons as family', 'family.pid', '=', 'family_tree.pid');
     }
 
+    public function scopeJoinVillage($query, $type='join') {
+        $join = ($type == 'join') ? 'join' : "{$type}join";
+        return $query->$join('villages', 'villages.vid', '=', 'persons.vid');
+    }
+
+    public function scopeJoinDistrict($query, $type='join') {
+        $join = ($type == 'join') ? 'join' : "{$type}join";
+        return $query->$join('districts', 'districts.did', '=', 'villages.did');
+    }
+
+    public function scopeJoinCity($query, $type='join') {
+        $join = ($type == 'join') ? 'join' : "{$type}join";
+        return $query->$join('cities', 'districts.cid', '=', 'cities.cid');
+    }
+
+    public function scopeJoinProvince($query, $type='join') {
+        $join = ($type == 'join') ? 'join' : "{$type}join";
+        return $query->$join('provinces', 'provinces.pvid', '=', 'cities.pvid');
+    }
+
     public static function PhoneUsed($phone_number) {
         return Person::where('phone_number', $phone_number)->first();
     }
@@ -87,5 +112,39 @@ class Person extends Model
     public static function phoneExist($phone) {
         $person = Person::where('phone_number',$phone)->first();
         return $person ? $person : false ;
+    }
+
+    public static function FamilyMember($pid, $user_id = null) {
+        if(!$user_id) $user_id = Auth::user()->uid;
+        $person = Person::join('persons as fam', 'fam.fmid', '=', 'persons.fmid')
+                    ->whereRaw('persons.uid = ? AND fam.pid = ?', [$user_id, $pid])
+                    ->first();
+
+        return $person;
+    }
+
+    public static function addFamily($data, $person_id=null) {
+        $fmid = null;
+        if(!$person_id) {
+            $person = Person::where('uid', Auth::user()->uid)->first();
+            if(!$person) {
+                return [null, 'Parent user not found'];
+            }
+            $person_id = $person->pid;
+            $fmid = $person->fmid;
+        }
+
+        if(!$fmid) {
+            $person = Person::find($person_id);
+            if(!$person) {
+                return [null, 'Parent user not found'];
+            }
+            $fmid = $person->fmid;
+        }
+
+        $data['fmid'] = $fmid;
+        $data['create_id'] = Auth::user()->uid;
+
+        return Person::create($data);
     }
 }

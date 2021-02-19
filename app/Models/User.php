@@ -53,6 +53,14 @@ class User extends Authenticatable implements JWTSubject
         return User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
     }
 
+    public function getEmailAttribute($value){
+        return strtolower($value);
+    }
+
+    public function setEmailAttribute($value){
+        $this->attributes['email'] = strtolower($value);
+    }
+
     public static function phoneIsUsed($phone) {
         $phone = format_phone($phone);
         return User::where('phone_number', $phone)->first();

@@ -12,6 +12,9 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Libraries\Whatsapp;
 use App\Models\{User, Person, FamilyMaster, FamilyTree};
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ConfirmEmail;
+
 class AuthController extends Controller
 {
     /**
@@ -180,11 +183,17 @@ class AuthController extends Controller
             $message .= "\nTerimakasih.";
             
             $send = Whatsapp::send($phone_number,$message);
-            $message = 'Silahkan cek aplikasi <span class="text-success">WhatsApp</span> anda untuk melakukan verifikasi';
+            
             
         } else {
-            $message = "Kirim email";
+            
+            $res = Mail::to($user->email)->send(new ConfirmEmail([
+                'name' => $person->full_name,
+                'link' => $link
+            ]));
+            
         }
+        $message = 'Silahkan cek <span class="text-success">Email/WhatsApp</span> anda untuk melakukan verifikasi';
         DB::commit();
         return response()->json([
             'status' => true,
@@ -241,7 +250,8 @@ class AuthController extends Controller
         else if (!$user->verified_at) {
             return response()->json([
                 'status' => false,
-                'message' => 'Silahkan konfirmasi akun anda terlebih dahulu'
+                'message' => 'Silahkan konfirmasi akun anda terlebih dahulu',
+                'need_verification' => true
             ]);
         }
 
@@ -372,16 +382,20 @@ class AuthController extends Controller
 
         $user = User::joinPerson()
         ->selectRaw('users.code, users.email, users.phone_number
-                    , persons.first_name, persons.last_name, persons.last_name, persons.tid as title_id, persons.gid as gender_id, persons.itid as identitytype_id
-                    , persons.identity_number, persons.birth_date, persons.birth_date, persons.msid as married_status_id, persons.rid as religion_id
+                    , persons.first_name, persons.last_name, persons.display_name, persons.tid as title_id, persons.gid as gender_id, persons.itid as identity_type_id
+                    , persons.identity_number, persons.birth_date, persons.birth_place, persons.msid as married_status_id, persons.rid as religion_id
                     , persons.vid as village_id, persons.address
                     , CASE WHEN users.lid = 2 THEN patient_pic(persons.profile_pic) ELSE doctor_pic(persons.profile_pic) END AS profile_pic
                     , users.verified_at, users.created_at as register_at')
         ->where("users.uid", $user->uid)
         ->first();
 
+
+        $unchecked_data = [ 'last_name', 'display_name' ];
+
         $complete_info = true;
         foreach($user->getAttributes() as $key => $val) {
+            if(in_array($key, $unchecked_data)) continue;
             if(!$val) {
                 $complete_info = false;
                 break;
@@ -399,6 +413,78 @@ class AuthController extends Controller
                 'user' => $user,
                 'token' => $token
             ],
+        ]);
+    }
+
+    public function ResendLinkVerification(Request $request) {
+        $valid = Validator::make($request->all(),[
+            'contact' => 'required',
+        ],[
+            'contact.required' => 'Masukan email/nomor telepon anda'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Parameter tidak lengkap',
+                'errors' => $valid->errors()
+            ]);
+        }
+        
+        $phone_number = $contact = $request->contact;
+    
+        if(preg_match('/@/', $contact)) {
+            $contact_type = 'email';    
+            $user = User::where('email', $contact)->first();
+        } else {
+            $contact_type = 'phone_number';
+            $phone_number = format_phone($contact);
+            $user = User::where('phone_number', $phone_number)->first();
+        }
+
+        if(!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Akun tidak ditemukan',
+                'errors' => [
+                    'contact' => ['pastian email/nomor anda benar']
+                ]
+            ]);
+        }
+
+        $code = [
+            'code' => $user->code,
+            'uid' => $user->uid,
+            'expire' => strtotime('+7 days')
+        ];
+
+        $verif_code = _encode($code);
+        $app_name = config('app.name');
+        $link = URL::to('verification/account/'.$user->code.'/'.$verif_code);
+
+        if($contact_type === 'phone_number') {
+            $message = "Hallo, terimakasih telah mendaftar di *_aplikasi {$app_name}_*";
+            $message .= "\nBerikut adalah link konfirmasi akun anda:\n";
+            $message .= "\n{$link}";
+            $message .= "\n\nJika anda tidak melakukan pendaftaran, abaikan pesan ini.";
+            $message .= "\nTerimakasih.";
+            
+            $send = Whatsapp::send($phone_number,$message);
+            
+            
+        } else {
+            
+            $res = Mail::to($user->email)->send(new ConfirmEmail([
+                'name' => $person->full_name,
+                'link' => $link
+            ]));
+            
+        }
+        $message = 'Silahkan cek <span class="text-success">Email/WhatsApp</span> anda untuk melakukan verifikasi';
+
+        return response()->json([
+            'status' => true,
+            'message' => $message
         ]);
     }
 }

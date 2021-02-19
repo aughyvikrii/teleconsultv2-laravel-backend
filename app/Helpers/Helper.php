@@ -19,6 +19,7 @@ if(!function_exists('format_phone')) {
      */
 
     function format_phone(string $string, bool $format62=true): string {
+        $string = preg_replace('/[^0-9]/', '', $string);
         if($format62=='62') {
             if(substr($string, 0,2) == '08') return "62" . substr($string,1);
             else return $string;
