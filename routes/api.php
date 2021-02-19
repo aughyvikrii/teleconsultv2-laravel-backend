@@ -109,6 +109,7 @@ Route::group(['middleware' => 'access'],  function(){
         Route::post('add', [PersonController::class, 'FamilyAdd'])->name('FamilyAdd');
         Route::get('detail/{id}', [PersonController::class, 'FamilyDetail'])->name('FamilyDetail');
         Route::put('update/{code?}', [PersonController::class, 'FamilyUpdate']);
+        Route::delete('delete/{id}', [PersonController::class, 'FamilyMemberDelete'])->name('FamilyMemberDelete');
     });
     
     Route::group(['prefix' => 'person'], function(){

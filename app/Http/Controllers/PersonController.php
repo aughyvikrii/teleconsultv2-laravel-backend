@@ -491,7 +491,7 @@ class PersonController extends Controller
         }
 
         if(preg_match('/data:image/', $request->input('profile_pic'))) {
-            $old_pic = storage_path('app/public/'. @$person->profile_pic);
+            $old_pic = @storage_path('app/public/image/profile/'. @$person->profile_pic);
             $upload_pic = parent::saveProfilePicture($request->input('profile_pic'), $person->fmid."-".uniqid() );
     
             if(!$profile_pic = @$upload_pic['basename']) {
@@ -530,8 +530,9 @@ class PersonController extends Controller
 
         $list = Person::selectRaw('persons.full_name, id_date(persons.birth_date) as birth_date, id_age(persons.birth_date) as age
                 , patient_pic(persons.profile_pic) as profile_pic, persons.pid as person_id
-                , persons.phone_number')
+                , persons.phone_number, (CASE WHEN persons.uid IS NOT NULL THEN TRUE ELSE FALSE END) AS primary')
             ->where('fmid', $person->fmid)
+            ->orderBy('full_name', 'ASC')
             ->get();
 
         return response()->json([
@@ -580,5 +581,33 @@ class PersonController extends Controller
             'message' => 'Data person ditemukan',
             'data' =>  $person
         ]);
+    }
+
+    public function FamilyMemberDelete($person_id) {
+        $user = Auth::user();
+        $primary_user = Person::where('uid', $user->uid)->first();
+
+        $person = Person::find($person_id);
+
+        if(!$person || $person->fmid != $primary_user->fmid) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data pasien tidak ditemukan'
+            ]);
+        }
+
+        $delete = $person->delete();
+
+        if(!$delete) {
+            return response()->json([
+                'status' =>  false,
+                'message' => 'Gagal menghapus data'
+            ]);
+        } else {
+            return response()->json([
+                'status' => true,
+                'message' => 'Berhasil menghapus data'
+            ]);
+        }
     }
 }
