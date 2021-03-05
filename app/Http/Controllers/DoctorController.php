@@ -339,4 +339,19 @@ class DoctorController extends Controller
             ]);
         }
     }
+
+    public function Schedule(Request $request) {
+
+        $list = Schedule::selectRaw('persons.display_name as name, branches.name as branch,
+                departments.name as department, doctor_pic(persons.profile_pic) as profile_pic')
+                ->ScheduleGroup()
+                ->joinFullInfo('join', false)
+                ->groupBy(DB::Raw("persons.display_name, branches.name, departments.name, persons.profile_pic"))
+                ->get();
+        
+        return response()->json([
+            'status' => true,
+            'data' =>  $list
+        ]);
+    }
 }

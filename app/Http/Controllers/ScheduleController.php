@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Auth, DB;
+use \Carbon\Carbon;
 use \App\Models\{Person, Schedule};
+use \App\Libraries\Schedule as ScheduleLib;
 
 class ScheduleController extends Controller
 {
@@ -221,6 +223,63 @@ class ScheduleController extends Controller
             'data' => [
                 'schedule_id' => $schedule->scid
             ]
+        ]);
+    }
+
+    public function ScheduleDate($scid) {
+        $schedule = Schedule::apiScheduleDetailByScid($scid);
+        
+        if(!$schedule) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Jadwal Telekonsultasi tidak ditemukan',
+            ]);
+        }
+
+        $schedule_lib = new ScheduleLib($schedule);
+
+        $schedule->date = $schedule_lib->getDateTeleconsult();
+
+        return response()->json([
+            'status' => true,
+            'data' => $schedule
+        ]);
+    }
+
+    public function ScheduleTime($scid, Request $request) {
+
+        if(!$date = $request->input('date')) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Pilih tanggal'
+            ]);
+        }
+
+        $schedule = Schedule::apiScheduleDetailByScid($scid);
+        
+        if(!$schedule) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Jadwal Telekonsultasi tidak ditemukan',
+            ]);
+        }
+
+        $schedule_lib = new ScheduleLib($schedule);
+
+        $list_date = $schedule_lib->getDateTeleconsult(true);
+
+        if(!isset($list_date[$date])) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Tanggal tidak sesuai jadwal'
+            ]);
+        }
+
+        $list_time = $schedule_lib->getTimeDetail();
+
+        return response()->json([
+            'status' => true,
+            'data' => $list_time
         ]);
     }
 }

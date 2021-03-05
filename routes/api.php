@@ -126,6 +126,7 @@ Route::group(['middleware' => 'access'],  function(){
     Route::group(['prefix' => 'doctor'], function(){
         Route::match(['GET', 'POST'], 'list', [DoctorController::class, 'List'])->name('DoctorList');
         Route::get('detail/{id}', [DoctorController::class, 'Detail'])->name('DoctorDetail');
+        Route::match(['GET', 'POST'], 'schedule', [DoctorController::class, 'Schedule'])->name('DoctorSchedule');
 
         Route::group(['middleware' => 'access:admin'], function(){
             Route::post('create', [DoctorController::class, 'Create'])->name('DoctorCreate');
@@ -138,6 +139,8 @@ Route::group(['middleware' => 'access'],  function(){
 
     Route::group(['prefix' => 'schedule'], function(){
         Route::match(['GET', 'POST'], 'list', [ScheduleController::class, 'List'])->name('ScheduleList');
+        Route::match(['GET', 'POST'], 'date/{schedule_id}', [ScheduleController::class, 'ScheduleDate'])->name('ScheduleDate');
+        Route::match(['GET', 'POST'], 'time/{schedule_id}', [ScheduleController::class, 'ScheduleTime'])->name('ScheduleTime');
         Route::put('{id}', [ScheduleController::class, 'Update'])->name('ScheduleUpdate');
     });
     
@@ -172,4 +175,14 @@ Route::group(['middleware' => 'access'],  function(){
             Route::delete('delete/{id}', [TitleController::class, 'Delete'])->name('TitleDelete');
         });
     });
+});
+
+Route::any('testing', function(){
+    $res = \App\Models\Schedule::selectRaw('persons.display_name as doctor, branches.name as branch,
+            departments.name as department, doctor_pic(persons.profile_pic) as doctor_pic')
+            ->ScheduleGroup()
+            ->joinFullInfo('join', false)
+            ->groupBy(DB::Raw("persons.display_name, branches.name, departments.name, persons.profile_pic"))
+            ->get();
+    return response()->json($res);
 });

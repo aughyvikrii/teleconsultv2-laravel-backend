@@ -34,6 +34,10 @@ class Person extends Model
                 ->joinProvince('left');
     }
 
+    public function scopeDoctor($query)  {
+        return $this->scopeIsDoctor($query);
+    }
+
     public function scopeJoinUser($query, $type='join') {
         $join = ($type == 'join') ? 'join' : "{$type}join";
         return $query->$join('users', 'users.uid', '=', 'persons.uid');
