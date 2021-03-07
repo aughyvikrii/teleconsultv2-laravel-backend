@@ -1,5 +1,7 @@
 <?php
 
+use Auth;
+
 if(!defined('__secret_app_key__'))  {
     define('__secret_app_key__', 'yOKMFcJVeOWx8kpDGIWNOlSvEjm12wMPT6BWdhdOY323sFE8BEfW2oThs9Sg19zN');
 }
@@ -159,8 +161,12 @@ if(!function_exists('person_level')) {
 }
 
 if(!function_exists('is_admin')) {
-    function is_admin($person) {
-        $level = person_level($person);
+    function is_admin($person=false) {
+        if(!$person) {
+            $level = @Auth::user()->lid;
+        } else {
+            $level = person_level($person);
+        }
         return $level === '1' ? true : false;
     }
 }

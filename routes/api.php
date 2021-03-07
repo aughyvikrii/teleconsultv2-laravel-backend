@@ -14,6 +14,7 @@ use App\Http\Controllers\ReligionController;
 use App\Http\Controllers\MarriedStatusController;
 use App\Http\Controllers\TitleController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\AppointmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +49,11 @@ Route::group(['prefix' => 'auth'], function(){
 Route::match(['POST', 'GET'], '/living_area', [PersonController::class, 'living_area'])->name('LivingArea');
 
 Route::group(['middleware' => 'access'],  function(){
+
+    Route::group(['prefix' => 'appointment'], function(){
+        Route::post('create', [AppointmentController::class, 'Create'])->name('AppointmentCreate');
+        Route::match(['GET', 'POST'], 'list', [AppointmentController::class, 'List'])->name('AppointmentList');
+    });
 
     Route::group(['prefix' => 'branch'], function(){
         Route::match(['GET', 'POST'], 'list', [BranchController::class, 'List'])->name('BranchList');

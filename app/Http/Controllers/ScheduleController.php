@@ -275,7 +275,7 @@ class ScheduleController extends Controller
             ]);
         }
 
-        $list_time = $schedule_lib->getTimeDetail();
+        $list_time = $schedule_lib->getTimeDetail(false, false, $date);
 
         return response()->json([
             'status' => true,

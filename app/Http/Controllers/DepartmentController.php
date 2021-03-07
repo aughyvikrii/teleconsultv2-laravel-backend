@@ -176,24 +176,15 @@ class DepartmentController extends Controller
             ]);
         } else {
 
-            if(($image_64 = $request->input('thumbnail')) && !preg_match("/{$old_thumbnail}/", $request->input('thumbnail')) ) {
-                $extension = explode('/', explode(':', substr($image_64, 0, strpos($image_64, ';')))[1])[1];   // .jpg .png .pdf
+            if(($image_64 = $request->input('thumbnail')) && ( !preg_match("/{$old_thumbnail}/", $request->input('thumbnail')) || !$old_thumbnail ) ) {
+               $upload = parent::storeImageB64($image_64, 'image/department/', $department->deid."-", true, true);
+               if($thumbnail_name = @$upload['basename']) {
+                   $department->update([
+                       'thumbnail' => $thumbnail_name
+                   ]);
     
-                $replace = substr($image_64, 0, strpos($image_64, ',')+1); 
-              
-              // find substring fro replace here eg: data:image/png;base64,
-              
-               $image = str_replace($replace, '', $image_64); 
-              
-               $image = str_replace(' ', '+', $image); 
-               $imageName = $department->deid.''.Str::random(10).'.'.$extension;
-               Storage::disk('public')->put('img/department/'.$imageName, base64_decode($image));
-               $thumbnail_name = $imageName;
-               $department->update([
-                   'thumbnail' => $thumbnail_name
-               ]);
-
-                Storage::disk('public')->delete('img/department/'.$old_thumbnail);
+                    Storage::disk('public')->delete('img/department/'.$old_thumbnail);
+               }
             }
 
             return response()->json([

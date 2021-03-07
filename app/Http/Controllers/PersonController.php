@@ -432,16 +432,13 @@ class PersonController extends Controller
         $phone_number = format_phone($request->input('phone_number'));
         $validEmail = $validPhone = true;
         $emailUsed = User::emailIUsed($request->email);
-        $phoneUsed = User::phoneIsUsed($phone_number);
+        $phoneUsed = Person::getByPhone($phone_number);
 
         if(!$pid) { // User utama
-            if($emailUsed->pid != $person->pid) $validEmail = false;
+            if( $emailUsed && @$emailUsed->uid != $user_id) $validEmail = false;
             if($phoneUsed->pid != $person->pid) $validPhone = false;
         } else {
-            // if($emailUsed->uid != $user->uid) $validEmail = false;
-            if(@$phoneUsed->uid) {
-                if($phoneUsed->uid != $user->uid) $validPhone = false;
-            }
+            if(@$phoneUsed->pid != $user->uid) $validPhone = false;
         }
 
         if(!$validEmail || !$validPhone) {

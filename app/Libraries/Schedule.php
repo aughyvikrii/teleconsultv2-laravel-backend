@@ -2,6 +2,8 @@
 namespace App\Libraries;
 
 use \App\Models\Schedule as MSchedule;
+use \App\Models\Appointment;
+use DB;
 use \Carbon\{ Carbon, CarbonPeriod, CarbonInterval };
 
 class Schedule {
@@ -87,26 +89,118 @@ class Schedule {
         return $times;
     }
 
-    public function getTimeDetail($withKey = false, $availableOnly = false) {
+    public function getTimeDetail($withKey = false, $availableOnly = false, $date = null) {
         if($this->error()) return $this->message;
 
         $startTime = Carbon::parse('2020-01-01 ' . $this->data->start_hour);
         $endTime = Carbon::parse('2020-01-01 ' . $this->data->end_hour);
         $intervals = CarbonInterval::minutes($this->data->duration)->toPeriod($startTime, $endTime);
 
-        $times = [];
+        $list_appointment = $times = [];
+
+        if($date) {
+            $list_appointment = $this->list_appointment([
+                'date' => $date
+            ]);
+        }
 
         foreach($intervals as $time) {
             
             $data = [
                 'time' => $time->format('H:i'),
-                'status' => 'available'
+                'status' => 'not_checked'
             ];
+
+            if($date) {
+                $format_date = $date . " " . $data['time'];
+                if(strtotime($format_date) <= time()) {
+                    $data['status'] = 'not_available';
+                }
+                else if(in_array($format_date, array_keys($list_appointment))) {
+
+                    switch($list_appointment[$format_date]['status']) {
+                        case 'waiting_consul': $status = 'booked'; break;
+                        case 'done': $status = 'booked'; break;
+                        case 'waiting_payment': $status = 'waiting_payment'; break;
+                        default: $status = 'available';
+                    }
+
+                    $data['status'] = $status;
+
+                    if($data['status'] == 'waiting_payment') {
+                        $data['expired_at'] = $list_appointment[$format_date]['expired_at'];
+                    }
+                } else {
+                    $data['status'] = 'available';
+                }
+            }
+
+            if($availableOnly && @$data['status'] != 'available') continue;
 
             if($withKey) $times[ $data['time'] ] = $data;
             else $times[] = $data;
         }
 
         return $times;
+    }
+
+    public function validConsulDate($date, $time) {
+        $available_date = $this->getDateTeleconsult(true);
+
+        if(!in_array($date, array_keys($available_date))) {
+            return [null, 'Tanggal tidak valid'];
+        }
+
+        $available_time = $this->getTimeDetail(true, false, $date);
+
+        if(!in_array($time, array_keys($available_time))) {
+            return [null, 'Jam tidak valid'];
+        }
+
+        $time_detail = $available_time[$time];
+        if(@$time_detail['status'] != 'available') {
+            switch($time_detail['status']) {
+                case 'waiting_payment': $message = "Jam ini sudah dipesan"; break;
+                case 'waiting_consul': $message = "Jam ini sudah dipesan"; break;
+                case 'done': $message = "Jam ini sudah dipesan"; break;
+
+                default: $message = 'Jam ini tidak dapat didaftarkan';
+            }
+            return [null, $message];
+        }
+
+        $full_date_format = $date . " " . $time;
+
+        if(strtotime($full_date_format) <= time()) {
+            return [null, 'Tidak bisa daftar kurang dari waktu saat ini'];
+        }
+
+        return true;
+    }
+
+    public function list_appointment($params) {
+        $addWhere = "";
+
+        $filters[] = $this->data->schedule_id;
+
+        if($date = @$params['date']) {
+            $addWhere .= " AND appointments.consul_date = ?";
+            $filters[] = $date;
+        }
+
+        $list = Appointment::join('bills', 'appointments.aid', '=', 'bills.aid')
+                ->selectRaw('appointments.aid, scid, consul_date, TO_CHAR(consul_time, \'HH24:MI\') as consul_time, appointments.status
+                , bills.expired_at')
+                ->whereRaw("appointments.scid = ? AND appointments.status IN ('waiting_payment' , 'waiting_consul', 'done') $addWhere", $filters)
+                ->get();
+        $return = [];
+        foreach($list->toArray() as $list) {
+            $list = (Object) $list;
+            $return[
+                @$list->consul_date . " " . @$list->consul_time
+            ] = (array) $list;
+        }
+
+        return $return;
     }
 }

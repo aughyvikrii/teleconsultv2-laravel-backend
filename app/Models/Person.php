@@ -118,6 +118,14 @@ class Person extends Model
         return $person ? $person : false ;
     }
 
+    public static function getByPhone($phone, $all_status = false) {
+        $where = "";
+        if(!$all_status) $where .= "AND is_active = TRUE";
+        $person = Person::whereRaw("phone_number = ? $where", [$phone]);
+
+        return $all_status ? $person->get() : $person->first();
+    }
+
     public static function FamilyMember($pid, $user_id = null) {
         if(!$user_id) $user_id = Auth::user()->uid;
         $person = Person::join('persons as fam', 'fam.fmid', '=', 'persons.fmid')

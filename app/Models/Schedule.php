@@ -72,6 +72,21 @@ class Schedule extends Model
                 ->selectRaw('_creator_person.full_name as creator');
     }
 
+    public function scopeallActive($query) {
+        $joins = $query->getQuery()->joins;
+        if(@count($joins) > 0) foreach($joins as $join) {
+            if(preg_match("/ as /", strtolower($join->table) )) {
+                dd("ALIAS TABLE");
+            } else {
+                $table = $join->table;
+            }
+
+            $query->where("$table.is_active", true);
+        }
+
+        return $query;
+    }
+
     public function scopeGroupingSchedule($query) {
         return $query->JoinFullInfo()
         ->selectRaw('persons.pid as doctor_id, persons.display_name as name, departments.deid as department_id, departments.name as department
