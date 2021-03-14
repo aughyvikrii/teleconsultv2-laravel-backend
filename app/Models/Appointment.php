@@ -51,7 +51,8 @@ class Appointment extends Model
                 ->JoinSchedule($type)
                 ->JoinDoctor($type)
                 ->joinDepartment($type)
-                ->joinBranch($type);
+                ->joinBranch($type)
+                ->JoinBill($type);
     }
 
     public function scopeJoinPatient($query, $type = 'join') {
@@ -94,6 +95,15 @@ class Appointment extends Model
         return $query;
     }
 
+    public function scopeJoinBill($query, $type = 'join') {
+        $join = self::joinType($type);
+
+        if(!$this->checkJoin($query, 'bills')) {
+            return $query->$join('bills', 'bills.aid', '=', 'appointments.aid');
+        }
+        return $query;
+    }
+
     public function scopeJoinBranch($query, $type = 'join') {
         $join = self::joinType($type);
 
@@ -104,5 +114,12 @@ class Appointment extends Model
         }
 
         return $query;
+    }
+
+    public function scopeFamily($query, $user_id = null) {
+        if(!$user_id) $user_id = auth()->user()->uid;
+        return $query->joinPatient()
+                ->join('persons', 'patient.fmid', '=', 'persons.fmid')
+                ->whereRaw('persons.uid = ?', [$user_id]);
     }
 }

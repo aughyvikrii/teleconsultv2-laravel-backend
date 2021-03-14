@@ -13,6 +13,12 @@ class Bill extends Model
     protected $guarded = ['blid'];
     public $timestamps = FALSE;
 
+    protected $casts = [
+        'midtrans_pending_raw' => 'json',
+        'midtrans_paid_raw' => 'json',
+        'midtrans_last_raw' => 'json'
+    ];
+
     public static function createUniq($prefix = null) {
         $uniq = null;
         while(!$uniq) {

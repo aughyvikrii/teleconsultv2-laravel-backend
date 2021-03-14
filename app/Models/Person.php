@@ -126,6 +126,12 @@ class Person extends Model
         return $all_status ? $person->get() : $person->first();
     }
 
+    public function scopeGetFamily($query, $user_id = null) {
+        if(!$user_id) $user_id = auth()->user()->uid;
+        return $query->join('persons as fam', 'fam.fmid', '=', 'persons.fmid')
+                ->whereRaw('persons.uid = ?', [$user_id]);
+    }
+
     public static function FamilyMember($pid, $user_id = null) {
         if(!$user_id) $user_id = Auth::user()->uid;
         $person = Person::join('persons as fam', 'fam.fmid', '=', 'persons.fmid')

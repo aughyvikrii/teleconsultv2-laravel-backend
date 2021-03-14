@@ -76,7 +76,7 @@ class Schedule {
         if($this->error()) return $this->message;
 
         $startTime = Carbon::parse('2020-01-01 ' . $this->data->start_hour);
-        $endTime = Carbon::parse('2020-01-01 ' . $this->data->end_hour);
+        $endTime = Carbon::parse('2020-01-01 ' . $this->data->end_hour)->subMinutes($this->data->duration);
         $intervals = CarbonInterval::minutes($this->data->duration)->toPeriod($startTime, $endTime);
 
         $times = [];
@@ -93,7 +93,7 @@ class Schedule {
         if($this->error()) return $this->message;
 
         $startTime = Carbon::parse('2020-01-01 ' . $this->data->start_hour);
-        $endTime = Carbon::parse('2020-01-01 ' . $this->data->end_hour);
+        $endTime = Carbon::parse('2020-01-01 ' . $this->data->end_hour)->subMinutes($this->data->duration);
         $intervals = CarbonInterval::minutes($this->data->duration)->toPeriod($startTime, $endTime);
 
         $list_appointment = $times = [];
@@ -113,10 +113,7 @@ class Schedule {
 
             if($date) {
                 $format_date = $date . " " . $data['time'];
-                if(strtotime($format_date) <= time()) {
-                    $data['status'] = 'not_available';
-                }
-                else if(in_array($format_date, array_keys($list_appointment))) {
+                if(in_array($format_date, array_keys($list_appointment))) {
 
                     switch($list_appointment[$format_date]['status']) {
                         case 'waiting_consul': $status = 'booked'; break;
@@ -130,6 +127,8 @@ class Schedule {
                     if($data['status'] == 'waiting_payment') {
                         $data['expired_at'] = $list_appointment[$format_date]['expired_at'];
                     }
+                } else if(strtotime($format_date) <= strtotime("+60 minutes")) {
+                    $data['status'] = 'not_available';
                 } else {
                     $data['status'] = 'available';
                 }

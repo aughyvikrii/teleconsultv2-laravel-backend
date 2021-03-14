@@ -346,8 +346,22 @@ class DoctorController extends Controller
                 departments.name as department, doctor_pic(persons.profile_pic) as profile_pic')
                 ->ScheduleGroup()
                 ->joinFullInfo('join', false)
-                ->groupBy(DB::Raw("persons.display_name, branches.name, departments.name, persons.profile_pic"))
-                ->get();
+                ->groupBy(DB::Raw("persons.display_name, branches.name, departments.name, persons.profile_pic"));
+
+        if($department_id = $request->input('department_id')) {
+            $list->where('departments.deid', $department_id);
+        }
+
+        if($branch_id = $request->input('branch_id')) {
+            $list->where('branches.bid', $branch_id);
+        }
+
+        if($doctor_name = $request->input('doctor_name')) {
+            $doctor_name = strtolower($doctor_name);
+            $list->where(DB::Raw('LOWER(persons.display_name)'), 'like', "%$doctor_name%");
+        }
+
+        $list = $list->get();
         
         return response()->json([
             'status' => true,

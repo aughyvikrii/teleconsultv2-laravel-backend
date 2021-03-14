@@ -1,6 +1,6 @@
 <?php
 
-use Auth;
+// use Auth;
 
 if(!defined('__secret_app_key__'))  {
     define('__secret_app_key__', 'yOKMFcJVeOWx8kpDGIWNOlSvEjm12wMPT6BWdhdOY323sFE8BEfW2oThs9Sg19zN');
@@ -206,5 +206,30 @@ if(!function_exists('profile_pic')) {
 
 
         return asset('storage/img/profile/'. $file_name);
+    }
+}
+
+if(!function_exists('short_link')) {
+    function short_link($link) {
+        $json = $error = null;
+        try {
+            $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, "https://home.s.id/api/public/link/shorten");
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                    'url' => $link
+                ]));
+            $output = curl_exec($ch);
+            curl_close($ch);
+            $json = json_decode($output, true);
+        } catch (Exception $e) {
+            $error = $e->getMessage();
+        }
+
+
+        $short = ( @$json['short'] ? 'https://s.id/'. $json['short'] : $link );
+        return $short;
     }
 }

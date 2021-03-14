@@ -540,7 +540,8 @@ class PersonController extends Controller
 
     public function FamilyDetail($person_id) {
         $user = Auth::user();
-
+        $person_id = preg_replace("/[^0-9]/", "", $person_id);
+        if(!$person_id) $person_id = 0;
         $person = Person::where('uid', $user->uid)->first();
 
         if(!$person) {

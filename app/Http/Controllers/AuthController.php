@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
-use JWTAuth;
+use JWTAuth, Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 use App\Libraries\Whatsapp;
@@ -485,6 +485,121 @@ class AuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => $message
+        ]);
+    }
+
+    public function UpdateAccount (Request $request) {
+        $valid = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'phone_number' => 'required'
+        ], [
+            'email.required' => 'Masukan alamat email',
+            'email.email' => 'Alamat email tidak valid',
+            'phone_number.required' => 'Masukan nomor telepon'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Kesalahan dalam inputan',
+                'errors' => $valid->errors()
+            ]);
+        }
+
+        $email = User::where('email', $request->email)->first();
+        if($email) {
+            if(@$email->uid != auth()->user()->uid) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Email sudah digunakan',
+                    'errors' => ['email' => ['Email sudah digunakan']]
+                ]);
+            }
+        }
+
+        $phone_number = format_phone($request->phone_number);
+        $phone = User::where('phone_number', $phone_number)->first();
+        if($phone) {
+            if(@$phone->uid != auth()->user()->uid) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Nomor telepon sudah digunakan',
+                    'errors' => ['phone_number' => ['Nomor telepon sudah digunakan']]
+                ]);
+            }
+        }
+
+        $update = auth()->user()->update([
+            'email' => $request->email,
+            'phone_number' => $phone_number,
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$update) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update akun'
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil update akun',
+            'data' => [
+                'email' => $request->email,
+                'phone_number' => $phone_number
+            ]
+        ]);
+    }
+
+    public function UpdatePassword(Request $request) {
+        $valid = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'new_password' => 'required',
+            'confirm_password' => 'required|same:new_password'
+        ], [
+            'current_password.required' => 'Masukan password saat ini',
+            'new_password.required' => 'Masukan password baru',
+            'confirm_password.required' => 'Masukan konfirmasi password',
+            'confirm_password.same' => 'Konfirmasi password tidak sesuai dengan password baru'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Inputan tidak sesuai',
+                'errors' => $valid->errors()
+            ]);
+        }
+
+        $currentPassMatch = Hash::check($request->current_password, auth()->user()->password);
+        if(!$currentPassMatch) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Inputan tidak sesuai',
+                'errors' => [
+                    'current_password' => [
+                        'Password tidak sesuai'
+                    ]
+                ]
+            ]);
+        }
+
+        $update = auth()->user()->update([
+            'password' => bcrypt($request->new_password),
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
+        if(!$update) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update password',
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil update password',
         ]);
     }
 }
