@@ -1,7 +1,5 @@
 <?php
 
-// use Auth;
-
 if(!defined('__secret_app_key__'))  {
     define('__secret_app_key__', 'yOKMFcJVeOWx8kpDGIWNOlSvEjm12wMPT6BWdhdOY323sFE8BEfW2oThs9Sg19zN');
 }
@@ -161,26 +159,34 @@ if(!function_exists('person_level')) {
 }
 
 if(!function_exists('is_admin')) {
-    function is_admin($person=false) {
+    function is_admin($person=null) {
         if(!$person) {
-            $level = @Auth::user()->lid;
+            $level = auth()->user()->lid;
         } else {
             $level = person_level($person);
         }
-        return $level === '1' ? true : false;
+        return $level == '1' ? true : false;
     }
 }
 
 if(!function_exists('is_doctor')) {
-    function is_doctor($person) {
-        $level = person_level($person);
-        return $level === '2' ? true : false;
+    function is_doctor($person=null) {
+        if(!$person) {
+            $level = auth()->user()->lid;
+        } else {
+            $level = person_level($person);
+        }
+        return $level == '2' ? true : false;
     }
 }
 
 if(!function_exists('is_patient')) {
-    function is_patient($person) {
-        $level = person_level($person);
+    function is_patient($person=null) {
+        if(!$person) {
+            $level = auth()->user()->lid;
+        } else {
+            $level = person_level($person);
+        }
         return $level === '3' ? true : false;
     }
 }

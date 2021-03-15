@@ -18,6 +18,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SoapController;
 
 /*
 |--------------------------------------------------------------------------
@@ -196,6 +197,12 @@ Route::group(['middleware' => 'access'],  function(){
     Route::group(['prefix' => 'news'], function(){
         Route::post('list', [NewsController::class, 'List']);
         Route::get('{id}', [NewsController::class, 'Detail']);
+    });
+
+    Route::group(['prefix' => 'doctor', 'middleware' => 'access:doctor'], function(){
+        Route::post('worklist', [DoctorController::class, 'Worklist']);
+        Route::get('appointment/{id}', [AppointmentController::class, 'Detail']);
+        Route::post('soap/{aid}/input', [SoapController::class, 'Input']);
     });
 });
 

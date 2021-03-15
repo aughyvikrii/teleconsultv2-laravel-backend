@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use \App\Models\{User, Person, Schedule};
+use \App\Models\{User, Person, Schedule, Appointment};
 use Auth, DB;
 use Carbon\Carbon;
 use JWTAuth;
@@ -366,6 +366,18 @@ class DoctorController extends Controller
         return response()->json([
             'status' => true,
             'data' =>  $list
+        ]);
+    }
+
+    public function Worklist(Request $request) {
+        $list = Appointment::joinFullInfo()
+                ->selectRaw('appointments.aid as appointment_id, patient.pid as patient_id, patient.full_name as patient_name, patient_pic(patient.profile_pic) as patient_pic, appointments.main_complaint, id_date(appointments.consul_date) as id_consul_date, appointments.consul_date, ftime(appointments.consul_time) as consul_time, appointments.status')
+                ->worklist()
+                ->paginate(25);
+        
+        return response()->json([
+            'status' => true,
+            'data' => $list
         ]);
     }
 }

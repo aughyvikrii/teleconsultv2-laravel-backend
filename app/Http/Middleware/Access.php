@@ -15,6 +15,10 @@ class Access
         '1'
     ];
 
+    private $doctor = [
+        '2'
+    ];
+
     /**
      * Handle an incoming request.
      *
@@ -44,12 +48,21 @@ class Access
                 ], 401);
             }
         }
-        
         if(!$role && !$user) return redirect('need_login');
         else if(!$role) return $next($request);
-        else if(!$role_id = @$this->{$role}) dd("ROLE TIDAK VALID");
+        else if(!$role_id = @$this->{$role}) {
+            return response()->json([
+                'status' => false,
+                'message' => 'invalid access'
+            ]);
+        }
         else {
-            if(!in_array($user->lid, $role_id)) abort(404);
+            if(!in_array($user->lid, $role_id)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'invalid access'
+                ]);
+            }
             else return $next($request);
         }
     }

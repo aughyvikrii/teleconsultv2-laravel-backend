@@ -122,4 +122,67 @@ class Appointment extends Model
                 ->join('persons', 'patient.fmid', '=', 'persons.fmid')
                 ->whereRaw('persons.uid = ?', [$user_id]);
     }
+
+    public function scopeWorklist($query, $date = null, $doctor_id = null) {
+        if(!$date) $date = date('Y-m-d');
+        $query->joinDoctor();
+        if(!$doctor_id) {
+            $query->join('users as docuser', 'docuser.uid', '=', 'doctor.uid')
+                    ->where('docuser.uid', auth()->user()->uid);
+        } else {
+            $query->where('doctor.pid', $doctor_id);
+        }
+
+        return $query->where('appointments.consul_date', $date)
+                ->where('appointments.status', 'waiting_consul');
+    }
+
+    public function scopeDoctorUID($query, $uid = null) {
+        if(!$uid) $uid = auth()->user()->uid;
+        if(!$uid) return false;
+
+        $query->JoinDoctor()
+            ->join('users as docuser', 'docuser.uid', '=', 'doctor.uid')
+                ->where('docuser.uid', $uid);
+    }
+
+    public function scopeJoinSoap($query, $type = 'join') {
+        $join = self::joinType($type);
+
+        if(!$this->checkJoin($query, 'soap')) {
+            return $query->$join('soap', 'soap.aid', '=', 'appointments.aid');
+        }
+
+        return $query;
+    }
+
+    public function scopeJoinLaboratory($query, $type = 'join') {
+        $join = self::joinType($type);
+
+        if(!$this->checkJoin($query, 'laboratories')) {
+            return $query->$join('laboratories', 'laboratories.aid', '=', 'appointments.aid');
+        }
+
+        return $query;
+    }
+
+    public function scopeJoinRadiology($query, $type = 'join') {
+        $join = self::joinType($type);
+
+        if(!$this->checkJoin($query, 'radiologies')) {
+            return $query->$join('radiologies', 'radiologies.aid', '=', 'appointments.aid');
+        }
+
+        return $query;
+    }
+
+    public function scopeJoinPharmacy($query, $type = 'join') {
+        $join = self::joinType($type);
+
+        if(!$this->checkJoin($query, 'pharmacies')) {
+            return $query->$join('pharmacies', 'pharmacies.aid', '=', 'appointments.aid');
+        }
+
+        return $query;
+    }
 }

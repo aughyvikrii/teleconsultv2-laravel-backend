@@ -254,8 +254,19 @@ class AppointmentController extends Controller
     public function Detail($appointment_id, Request $request) {
         $data = Appointment::joinFullInfo()
                 ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key")
-                ->whereRaw('appointments.aid = ?', [$appointment_id])
-                ->first();
+                ->where('appointments.aid', $appointment_id);
+        if(is_patient()) {
+            $data->familyOf(auth()->user()->uid);
+        } else if (is_doctor()) {
+            $data->JoinSoap('left')
+            ->JoinLaboratory('left')
+            ->JoinRadiology('left')
+            ->JoinPharmacy('left')
+            ->selectRaw('soap.subjective, soap.objective, soap.assesment, soap.plan, laboratories.recommendation as lab_recom, laboratories.diagnosis as lab_diagnosis, laboratories.allergy as lab_allergy, radiologies.recommendation as rad_recom, radiologies.diagnosis as rad_diagnosis, radiologies.allergy as rad_allergy, pharmacies.recommendation as phar_recom, pharmacies.diagnosis as phar_diagnosis, pharmacies.allergy as phar_allergy')
+            ->doctorUID(auth()->user()->uid);
+        }
+
+        $data = $data->first();
 
         if(!$data) {
             return response()->json([
