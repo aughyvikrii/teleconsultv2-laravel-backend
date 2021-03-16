@@ -54,7 +54,7 @@ Route::match(['POST', 'GET'], '/living_area', [PersonController::class, 'living_
 
 Route::group(['middleware' => 'access'],  function(){
 
-    Route::get('dashboard', [HomeController::class, 'Dashboard']);
+    Route::match(['POST', 'GET'], 'dashboard', [HomeController::class, 'Dashboard']);
 
     Route::group(['prefix' => 'appointment'], function(){
         Route::post('create', [AppointmentController::class, 'Create'])->name('AppointmentCreate');
@@ -200,8 +200,10 @@ Route::group(['middleware' => 'access'],  function(){
     });
 
     Route::group(['prefix' => 'doctor', 'middleware' => 'access:doctor'], function(){
-        Route::post('worklist', [DoctorController::class, 'Worklist']);
-        Route::get('appointment/{id}', [AppointmentController::class, 'Detail']);
+        Route::post('worklist', [AppointmentController::class, 'Worklist']);
+        Route::post('appointment/history', [AppointmentController::class, 'History']);
+        Route::post('appointment/incoming', [AppointmentController::class, 'Incoming']);
+        Route::match(['GET', 'POST'],'appointment/{id}', [AppointmentController::class, 'Detail']);
         Route::post('soap/{aid}/input', [SoapController::class, 'Input']);
     });
 });

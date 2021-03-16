@@ -62,6 +62,17 @@ class SoapController extends Controller
             'last_update' => date('Y-m-d H:i:s')
         ]);
 
+        $update_data = [
+            'status' => 'done',
+            'last_update' => date('Y-m-d H:i:s')
+        ];
+
+        if(!$appointment->end_consul) {
+            $update_data['end_consul'] = date('Y-m-d H:i:s');
+        }
+
+        $update = $appointment->update($update_data);
+
         return response()->json([
             'status'  => true,
             'message' => 'Berhasil input soap'

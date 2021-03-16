@@ -255,6 +255,7 @@ class AppointmentController extends Controller
         $data = Appointment::joinFullInfo()
                 ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key")
                 ->where('appointments.aid', $appointment_id);
+
         if(is_patient()) {
             $data->familyOf(auth()->user()->uid);
         } else if (is_doctor()) {
@@ -262,7 +263,7 @@ class AppointmentController extends Controller
             ->JoinLaboratory('left')
             ->JoinRadiology('left')
             ->JoinPharmacy('left')
-            ->selectRaw('soap.subjective, soap.objective, soap.assesment, soap.plan, laboratories.recommendation as lab_recom, laboratories.diagnosis as lab_diagnosis, laboratories.allergy as lab_allergy, radiologies.recommendation as rad_recom, radiologies.diagnosis as rad_diagnosis, radiologies.allergy as rad_allergy, pharmacies.recommendation as phar_recom, pharmacies.diagnosis as phar_diagnosis, pharmacies.allergy as phar_allergy')
+            ->selectRaw('soaps.subjective, soaps.objective, soaps.assesment, soaps.plan, laboratories.recommendation as lab_recom, laboratories.diagnosis as lab_diagnosis, laboratories.allergy as lab_allergy, radiologies.recommendation as rad_recom, radiologies.diagnosis as rad_diagnosis, radiologies.allergy as rad_allergy, pharmacies.recommendation as phar_recom, pharmacies.diagnosis as phar_diagnosis, pharmacies.allergy as phar_allergy')
             ->doctorUID(auth()->user()->uid);
         }
 
@@ -279,9 +280,77 @@ class AppointmentController extends Controller
             'create_id', 'delete_id', 'deleted_at', 'is_active'
         ]);
 
+        if(is_doctor() && $request->input('start') && !$data->start_consul) {
+            $data->update([
+                'start_consul' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        $consul_finish = \Carbon\Carbon::parse($data->consul_date.' '.$data->consul_time)->addMinutes($data->duration);
+        $data->consul_finish_date = $consul_finish->format('Y-m-d');
+        $data->consul_finish_id_date = $consul_finish->translatedFormat('l, d F Y H:i');
+        $data->consul_finish_time = $consul_finish->format('H:i');
+
+
         return response()->json([
             'status' => true,
             'data' => $data
+        ]);
+    }
+
+    public function Worklist(Request $request) {
+        $list = Appointment::joinFullInfo()
+                ->selectRaw('appointments.aid as appointment_id, patient.pid as patient_id, patient.full_name as patient_name, patient_pic(patient.profile_pic) as patient_pic, appointments.main_complaint, id_date(appointments.consul_date) as id_consul_date, appointments.consul_date, ftime(appointments.consul_time) as consul_time, appointments.status')
+                ->worklist();
+
+        if($query = $request->input('query')) {
+            $list->whereRaw("(LOWER(patient.full_name) LIKE LOWER(?) OR appointments.aid = ?)", ["%$query%", intval($query)]);
+        }
+
+        $list = $list->paginate($request->input('data_per_page', 25));
+        
+        return response()->json([
+            'status' => true,
+            'data' => $list
+        ]);
+    }
+
+    public function History(Request $request){
+        
+        $list = Appointment::joinFullInfo()
+        ->selectRaw("appointments.*,appointments.aid as appointment_id, ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key")
+        ->doctorUID(auth()->user()->uid)
+        ->where('appointments.status', 'done')
+        ->orderBy('appointments.consul_date', 'DESC');
+
+        if($query = $request->input('query')) {
+            $list->whereRaw("(LOWER(patient.full_name) LIKE LOWER(?) OR appointments.aid = ?)", ["%$query%", intval($query)]);
+        }
+
+        $list = $list->paginate($request->input('data_per_page', 25));
+
+        return response()->json([
+            'status' => true,
+            'data'  => $list
+        ]);
+    }
+
+    public function Incoming(Request $request) {
+        $list = Appointment::joinFullInfo()
+        ->selectRaw("appointments.*,appointments.aid as appointment_id, ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key")
+        ->doctorUID(auth()->user()->uid)
+        ->whereIn('appointments.status', ['waiting_consul'])
+        ->orderBy('appointments.consul_date', 'DESC');
+
+        if($query = $request->input('query')) {
+            $list->whereRaw("(LOWER(patient.full_name) LIKE LOWER(?) OR appointments.aid = ?)", ["%$query%", intval($query)]);
+        }
+
+        $list = $list->paginate($request->input('data_per_page', 25));
+
+        return response()->json([
+            'status' => true,
+            'data'  => $list
         ]);
     }
 }

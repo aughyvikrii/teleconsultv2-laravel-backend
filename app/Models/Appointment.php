@@ -134,7 +134,7 @@ class Appointment extends Model
         }
 
         return $query->where('appointments.consul_date', $date)
-                ->where('appointments.status', 'waiting_consul');
+                ->whereIn('appointments.status', ['waiting_consul', 'in_consul']);
     }
 
     public function scopeDoctorUID($query, $uid = null) {
@@ -149,8 +149,8 @@ class Appointment extends Model
     public function scopeJoinSoap($query, $type = 'join') {
         $join = self::joinType($type);
 
-        if(!$this->checkJoin($query, 'soap')) {
-            return $query->$join('soap', 'soap.aid', '=', 'appointments.aid');
+        if(!$this->checkJoin($query, 'soaps')) {
+            return $query->$join('soaps', 'soaps.aid', '=', 'appointments.aid');
         }
 
         return $query;
