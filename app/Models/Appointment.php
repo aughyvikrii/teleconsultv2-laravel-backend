@@ -19,6 +19,13 @@ class Appointment extends Model
     ];
 
     protected $casts = [
+        'appointment_json' =>  'json',
+        'patient_json'  => 'json',
+        'doctor_json' => 'json',
+        'schedule_json' => 'json',
+        'department_json' => 'json',
+        'branch_json' => 'json',
+        'bill_json' => 'json',
         'is_active' => 'bool'
     ];
 
