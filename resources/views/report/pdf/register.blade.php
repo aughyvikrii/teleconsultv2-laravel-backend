@@ -141,7 +141,7 @@
             </tr>
             <tr>
                 <td class="label">Tanggal Konsultasi</td>
-                <td>: {{ \Carbon\Carbon::parse(@$data->appointment_json['date_consul'].' '. @$data->appointment_json['time_consul'])->translatedFormat('l, d F Y H:i') }}</td>
+                <td>: {{ \Carbon\Carbon::parse(@$data->appointment_json['consul_date'].' '. @$data->appointment_json['consul_time'])->translatedFormat('l, d F Y H:i') }}</td>
             </tr>
             <tr>
                 <td class="label">Durasi Jadwal</td>

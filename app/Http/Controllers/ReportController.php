@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use \App\Models\{Appointment};
+use \App\Models\{Appointment, LogReport, Soap};
 use DB, PDF;
 
 class ReportController extends Controller
@@ -11,6 +11,9 @@ class ReportController extends Controller
     public $type = [
         'full', 'register', 'soap', 'pharmacy', 'radiology', 'laboratory'
     ];
+
+    public $appointment = null;
+    public $save_log = false;
 
     public function Print(Request $request) {
         $type = $request->input('type');
@@ -46,16 +49,77 @@ class ReportController extends Controller
             ]);
         }
 
+        $this->appointment = $appointment;
+
+        return $this->$type($request);
+    }
+
+    public function register(Request $request) {
+        $type = $request->input('type');
+
+        $appointment_id = $request->input('appointment_id');
+
+        $appointment = $this->appointment;
+
         $uniq = uniqid();
+
+        if($this->save_log) {
+            LogReport::create([
+                'aid' =>  $appointment_id,
+                'uniq' => $uniq,
+                'type' => 'register',
+                'create_id' => auth()->user()->uid,
+                'created_at' =>  date('Y-m-d H:i:s')
+            ]);
+        }
 
         $pdf = PDF::loadView('report.pdf.'. $type, [
             'data' => $appointment,
             'id' => $uniq
         ]);
+
         $pdf->setOptions([
             'defaultPaperSize' => 'a4',
             'defaultFont' => 'Times New Roman'
         ]);
+
         return $pdf->stream('Laporan_Pendaftaran_'. @$appointment->appointment_json['aid'] . '_'. $uniq . '.pdf');
+    }
+
+    public function soap(Request $request) {
+        $type = $request->input('type');
+
+        $appointment_id = $request->input('appointment_id');
+
+        $appointment = $this->appointment;
+
+        $soap = Soap::JoinFullInfoJson()
+                ->where('soaps.aid', $appointment_id)
+                ->first();
+
+        $uniq = uniqid();
+
+        if($this->save_log) {
+            LogReport::create([
+                'aid' =>  $appointment_id,
+                'uniq' => $uniq,
+                'type' => 'soap',
+                'create_id' => auth()->user()->uid,
+                'created_at' =>  date('Y-m-d H:i:s')
+            ]);
+        }
+
+        $pdf = PDF::loadView('report.pdf.'. $type, [
+            'register' => $appointment,
+            'soap' => $soap,
+            'id' => $uniq
+        ]);
+
+        $pdf->setOptions([
+            'defaultPaperSize' => 'a4',
+            'defaultFont' => 'Times New Roman'
+        ]);
+
+        return $pdf->stream('Laporan_Soap_'. @$appointment->appointment_json['aid'] . '_'. $uniq . '.pdf');
     }
 }
