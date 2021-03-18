@@ -192,4 +192,8 @@ class Appointment extends Model
 
         return $query;
     }
+
+    public function scopeMyFamily($query) {
+        return $query->Family(auth()->user()->uid);
+    }
 }

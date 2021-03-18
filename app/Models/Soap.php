@@ -83,4 +83,12 @@ class Soap extends Model
                     row_to_json(pharmacies) as pharmacy_json
                 ");
     }
+
+    public function scopeCreateBy($query, $uid) {
+        return $query->where('soaps.create_id', $uid);
+    }
+
+    public function scopeCreateByMe($query) {
+        return $query->CreateBy(auth()->user()->uid);
+    }
 }

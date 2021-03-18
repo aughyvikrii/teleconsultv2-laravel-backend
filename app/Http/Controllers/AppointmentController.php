@@ -253,11 +253,11 @@ class AppointmentController extends Controller
 
     public function Detail($appointment_id, Request $request) {
         $data = Appointment::joinFullInfo()
-                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key")
+                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key, appointments.start_consul, appointments.end_consul")
                 ->where('appointments.aid', $appointment_id);
 
         if(is_patient()) {
-            $data->familyOf(auth()->user()->uid);
+            $data->myFamily();
         } else if (is_doctor()) {
             $data->JoinSoap('left')
             ->JoinLaboratory('left')
@@ -339,6 +339,7 @@ class AppointmentController extends Controller
         $list = Appointment::joinFullInfo()
         ->selectRaw("appointments.*,appointments.aid as appointment_id, ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key")
         ->doctorUID(auth()->user()->uid)
+        ->where('appointments.consul_date', '>', date('Y-m-d'))
         ->whereIn('appointments.status', ['waiting_consul'])
         ->orderBy('appointments.consul_date', 'DESC');
 

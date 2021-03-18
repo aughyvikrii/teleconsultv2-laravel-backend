@@ -289,8 +289,14 @@ class AuthController extends Controller
         ->first();
 
         $complete_info = true;
+
+        $skip = [];
+        if(is_patient()) {
+            $skip = ['display_name'];
+        }
+
         foreach($user->getAttributes() as $key => $val) {
-            if(!$val) {
+            if(!$val && !in_array($key, $skip)) {
                 $complete_info = false;
                 break;
             }

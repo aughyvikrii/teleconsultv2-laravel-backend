@@ -205,6 +205,7 @@ Route::group(['middleware' => 'access'],  function(){
         Route::post('appointment/incoming', [AppointmentController::class, 'Incoming']);
         Route::match(['GET', 'POST'],'appointment/{id}', [AppointmentController::class, 'Detail']);
         Route::post('soap/{aid}/input', [SoapController::class, 'Input']);
+        Route::post('soap/{aid}/update', [SoapController::class, 'Update']);
     });
 });
 

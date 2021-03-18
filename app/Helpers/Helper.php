@@ -187,7 +187,7 @@ if(!function_exists('is_patient')) {
         } else {
             $level = person_level($person);
         }
-        return $level === '3' ? true : false;
+        return $level == '3' ? true : false;
     }
 }
 
