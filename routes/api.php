@@ -58,6 +58,7 @@ Route::group(['middleware' => 'access'],  function(){
 
     Route::group(['prefix' => 'appointment'], function(){
         Route::post('create', [AppointmentController::class, 'Create'])->name('AppointmentCreate');
+        Route::post('re_register', [AppointmentController::class, 'ReRegister'])->name('AppointmentReRegister');
         Route::match(['GET', 'POST'], 'list', [AppointmentController::class, 'List'])->name('AppointmentList');
         Route::get('detail/{id}', [AppointmentController::class, 'Detail'])->name('AppointmentDetail');
     });

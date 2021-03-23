@@ -144,6 +144,12 @@ if(!function_exists('array_match_key')) {
     }
 }
 
+if(!function_exists('ftime')) {
+    function ftime($string, $format = 'H:i') {
+        return date($format, strtotime("2020-01-01 " . $string));
+    }
+}
+
 if(!function_exists('person_level')) {
     function person_level($pid) {
         if(is_object($pid)) {
@@ -237,5 +243,16 @@ if(!function_exists('short_link')) {
 
         $short = ( @$json['short'] ? 'https://s.id/'. $json['short'] : $link );
         return $short;
+    }
+}
+
+if(!function_exists('array_remove')) {
+    function array_remove($arr_1, $index) {
+        if(!is_array($index)) {
+            unset($arr_1[$index]);
+            return $arr_1;
+        }
+
+        return array_diff_key($arr_1, array_flip($index));
     }
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use \App\Models\{Person, Village, User};
+use \App\Models\{Person, Village, User, Appointment};
 use Auth, DB;
 
 class PersonController extends Controller
@@ -437,7 +437,7 @@ class PersonController extends Controller
         if(!$pid) { // User utama
             if( $emailUsed && @$emailUsed->uid != $user_id) $validEmail = false;
             if($phoneUsed->pid != $person->pid) $validPhone = false;
-        } else {
+        } else if ($phoneUsed) {
             if(@$phoneUsed->pid != $user->uid) $validPhone = false;
         }
 
@@ -591,6 +591,17 @@ class PersonController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Data pasien tidak ditemukan'
+            ]);
+        }
+
+        $appointment = Appointment::where('patient_id', $person->pid)
+                        ->whereIn('status', ['done', 'waiting-consult', 'waiting-payment'])
+                        ->get();
+
+        if($appointment->count()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Pasien ini memiliki perjanjian yang belum dibayar/ menunggu konsultasi/ sudah selesai, data tidak dapat dihapus'
             ]);
         }
 

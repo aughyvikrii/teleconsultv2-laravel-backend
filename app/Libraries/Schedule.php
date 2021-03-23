@@ -144,6 +144,8 @@ class Schedule {
     }
 
     public function validConsulDate($date, $time) {
+        $date = date('Y-m-d', strtotime($date));
+        $time = date('H:i', strtotime("2020-01-01 ". $time));
         $available_date = $this->getDateTeleconsult(true);
 
         if(!in_array($date, array_keys($available_date))) {
@@ -174,7 +176,7 @@ class Schedule {
             return [null, 'Tidak bisa daftar kurang dari waktu saat ini'];
         }
 
-        return true;
+        return [true, null];
     }
 
     public function list_appointment($params) {

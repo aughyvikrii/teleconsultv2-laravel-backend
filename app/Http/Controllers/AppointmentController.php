@@ -253,7 +253,7 @@ class AppointmentController extends Controller
 
     public function Detail($appointment_id, Request $request) {
         $data = Appointment::joinFullInfo()
-                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key, appointments.start_consul, appointments.end_consul")
+                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key, appointments.start_consul, appointments.end_consul, false as can_re_register")
                 ->where('appointments.aid', $appointment_id);
 
         if(is_patient()) {
@@ -291,6 +291,13 @@ class AppointmentController extends Controller
         $data->consul_finish_id_date = $consul_finish->translatedFormat('l, d F Y H:i');
         $data->consul_finish_time = $consul_finish->format('H:i');
 
+        if(in_array($data->status,['payment_cancel', 'payment_expire']) && is_patient()) {
+            $LSchedule = new LSchedule($data->scid);
+            list($still_valid, $error) = $LSchedule->validConsulDate($data->consul_date, $data->consul_time);
+            if($still_valid) {
+                $data->can_re_register = true;
+            }
+        }
 
         return response()->json([
             'status' => true,
@@ -352,6 +359,179 @@ class AppointmentController extends Controller
         return response()->json([
             'status' => true,
             'data'  => $list
+        ]);
+    }
+
+    public function ReRegister(Request $request) {
+        if(!$appointment_id = $request->appointment_id) {
+            return response()->json([
+                'status' => false,
+                'message'  => 'ID Perjanjian tidak ditemukan'
+            ]);
+        }
+
+        $appointment = Appointment::joinFullInfo()
+                ->selectRaw("appointments.*")
+                ->where('appointments.aid', $appointment_id)
+                ->myFamily()
+                ->first();
+
+        if(!$appointment) {
+            return response()->json([
+                'status' => false,
+                'message'  => 'Perjanjian yang akan didaftarkan tidak ditemukan'
+            ]);
+        }
+        
+        $LSchedule = new LSchedule($appointment->scid);
+        list($still_valid, $error) = $LSchedule->validConsulDate($appointment->consul_date, $appointment->consul_time);
+        if(!$still_valid) {
+            return response()->json([
+                'status' => false,
+                'message'  => $error
+            ]);
+        }
+
+        $schedule = Schedule::JoinFullInfo()
+                    ->selectRaw("persons.display_name as doctor_name, schedules.fee, branches.bid as branch_id, departments.name as department")
+                    ->where('schedules.scid', $appointment->scid)
+                    ->first();
+
+        $patient = Person::find($appointment->patient_id);
+
+        $bill = Bill::where('aid', $appointment->aid)->first();
+
+        if(!$bill) {
+            return response()->json([
+                'status' => false,
+                'message'  => 'Perjanjian yang akan didaftarkan tidak ditemukan'
+            ]);
+        }
+
+        $new_appointment = array_remove($appointment->toArray(),['aid', 'status']);
+
+        $new_appointment = array_merge($new_appointment, [
+            'created_at' => date('Y-m-d H:i:s'),
+            'create_id' => auth()->user()->uid,
+            'last_update' => date('Y-m-d H:i:s'),
+        ]);
+
+        DB::BeginTransaction();
+
+        $new_appointment = Appointment::create($new_appointment);
+
+
+        if(!$new_appointment) {
+            return response()->json([
+                'status' => false,
+                'message'  => 'Gagal melakukan pendaftaran'
+            ]);
+        }
+
+        $bill_uniq = Bill::createUniq();
+        $bill_desc = "Telekonsultasi $schedule->doctor_name pada ". $new_appointment->consul_date . " " . date("H:i", strtotime("2020-10-10 ". $new_appointment->consul_time));
+        $bill_expired = \Carbon\Carbon::now()->addMinutes("60");
+
+        $bill_data = [
+            'uniq' => $bill_uniq,
+            'aid' => $new_appointment->aid,
+            'description' => $bill_desc,
+            'amount' => $schedule->fee,
+            'expired_at' => $bill_expired->format('Y-m-d H:i:s'),
+            'create_id' => auth()->user()->uid
+        ];
+
+        $bill = Bill::create($bill_data);
+
+        if(!$bill) {
+            DB::rollback();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal membuat perjanjian, silahkan coba lagi',
+            ]);
+        }
+
+        DB::commit();
+
+        $midtrans = new Midtrans($schedule->branch_id);
+
+        list($snapToken, $error) = $midtrans->getSnapToken(array(
+            'transaction_details' => [
+                'order_id' => $bill->uniq,
+                'gross_amount' => $bill->amount,
+            ],
+            'customer_details' => [
+                'first_name' => @$patient->first_name, 'last_name' => @$patient->last_name,
+                'email' => auth()->user()->email, 'phone' => @$patient->phone_number,
+            ],
+            "expiry" => [
+                'start_time' => \Carbon\Carbon::now()->format('Y-m-d H:i:s') . " +0700",
+                'unit' => 'minutes', 'duration' => 60
+            ],
+            'callbacks' => [
+                'finish' => URL::to("appointment_history/{$new_appointment->aid}?status=finish"),
+                'unfinish' => URL::to("appointment_history/{$new_appointment->aid}?status=unfinish"),
+                'error' => URL::to("appointment_history/{$new_appointment->aid}?status=error"),
+            ]
+        ));
+        
+        if($snapToken) {
+            $bill->update([
+                'midtrans_snaptoken' => $snapToken
+            ]);
+        }
+
+        try {
+            $message = "Hallo {$patient->first_name},";
+            $message .= "\n\nAnda telah membuat perjanjian telekonsultasi pada:";
+            $message .= "\n\n*------------ INFORMASI ------------*\n";
+            $message .= "\n*Tgl Konsultasi*\n{$new_appointment->consul_date} ".ftime($new_appointment->consul_time)."\n";
+            $message .= "\n*Dokter*\n{$schedule->doctor_name}\n";
+            $message .= "\n*Poli*\n{$schedule->department}\n";
+            // $message .= "\n*Cabang*\n{$schedule->branch}\n";
+            $message .= "\n*Pasien*\n{$patient->full_name}\n";
+            $message .= "\n*Tgl Daftar*\n{$appointment->created_at}\n";
+            $message .= "\n\n*------------ PEMBAYARAN ------------*\n";
+            $message .= "\n*Total*\nRp " . number_format($schedule->fee, 0) . "\n";
+            $message .= "\n*Status*\nMenunggu Pembayaran\n";
+            $message .= "\n*Batas waktu*\n{$bill->expired_at}\n";
+            // $message .= "\n*Link Pembayaran*\n". short_link(URL::to('asdasd')) ."\n";
+            $message .= "\n\n_*Segera selesaikan pembayaran anda sebelum waktu yang ditentukan.*_";
+            $message .= "\n\nJika anda tidak melakukan pendaftaran, abaikan pesan ini.";
+            $message .= "\n\nTerimakasih.";
+            
+            $send = Whatsapp::send($patient->phone_number,$message);
+        } catch (Exception $e) {
+            $error = $e->getMessage();
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil membuat perjanjian, segera lunasi tagihan sebelum batas waktu habis',
+            'data' => [
+                'appointment' => [
+                    'id' => $new_appointment->aid,
+                    'patient_id' => $patient->pid,
+                    'schedule_id' => $new_appointment->scid,
+                    'consul_date' => $new_appointment->consul_date,
+                    'consul_time' => ftime($new_appointment->consul_time),
+                    'main_complaint' => $new_appointment->main_complaint,
+                    'disease_history' => $new_appointment->disease_history,
+                    'allergy' => $new_appointment->allergy,
+                    'body_temperature' => $new_appointment->body_temperature,
+                    'blood_pressure' => $new_appointment->blood_pressure,
+                    'weight' => $new_appointment->weight,
+                    'height' => $new_appointment->height,
+                ],
+                'bill' => [
+                    'id' => $bill->uniq,
+                    'description' => $bill->description,
+                    'amount' => $bill->amount,
+                    'created_at' => $bill->created_at,
+                    'expired_at' => $bill->expired_at,
+                    'status' => $bill->status,
+                ]
+            ]
         ]);
     }
 }

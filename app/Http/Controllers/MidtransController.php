@@ -35,12 +35,24 @@ class MidtransController extends Controller
         $midtrans_lib = new Midtrans($branch);
 
         list($check, $error) = $midtrans_lib->status($request->input('transaction_id'));
-
-        if(!$status = @$request->transaction_status) {
+        
+        if(!$status = @$check->transaction_status) {
             return response()->json([
                 'status' => false,
                 'message' => 'transaction status not set',
                 'log' => $check
+            ]);
+        }
+
+        $newrequest = new Request;
+        $newrequest->replace(json_decode(json_encode($check), true));
+
+        if($request->order_id != $newrequest->order_id) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Parameter yang diberikan tidak match dengan data asli',
+                'data_received' => $request->toArray(),
+                'data_valid' => $newrequest->toArray()
             ]);
         }
 
@@ -235,6 +247,33 @@ class MidtransController extends Controller
     }
 
     public function cancelAppointment($data) {
+        $branch = @$data['branch'];
+        $bill = @$data['bill'];
+        $appointment = @$data['appointment'];
+        $check = @$data['check'];
+        $request = @$data['request'];
+        $patient = Person::find($appointment->patient_id);
 
+        if($bill->status != 'waiting_payment') {
+            echo "fail: status pembayaran tercatat [{$bill->status}]";
+            exit();
+        }
+
+        DB::BeginTransaction();
+
+        $bill->update([
+            'status' => 'cancel',
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
+        $appointment->update([
+            'status' => 'payment_cancel',
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
+        DB::commit();
+
+        echo 'ok: Tagihan dan perjanjian dibatalkan dengan status [cancel]';
+        exit();
     }
 }
