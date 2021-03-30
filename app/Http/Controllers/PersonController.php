@@ -529,8 +529,12 @@ class PersonController extends Controller
                 , patient_pic(persons.profile_pic) as profile_pic, persons.pid as person_id
                 , persons.phone_number, (CASE WHEN persons.uid IS NOT NULL THEN TRUE ELSE FALSE END) AS primary')
             ->where('fmid', $person->fmid)
-            ->orderBy('full_name', 'ASC')
-            ->get();
+            ->orderBy('full_name', 'ASC');
+
+        if(!$request->input('paginate')) $list = $list->get();
+        else {
+            $list = $list->paginate($request->input('data_per_page', 10));
+        }
 
         return response()->json([
             'status' => true,

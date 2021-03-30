@@ -143,6 +143,7 @@ Route::group(['middleware' => 'access'],  function(){
         Route::match(['GET', 'POST'], 'schedule', [DoctorController::class, 'Schedule'])->name('DoctorSchedule');
 
         Route::group(['middleware' => 'access:admin'], function(){
+            Route::match(['GET', 'POST'], '{id}/appointments', [DoctorController::class, 'appointments']);
             Route::post('create', [DoctorController::class, 'Create'])->name('DoctorCreate');
             Route::put('update/{id}', [DoctorController::class, 'Update'])->name('DoctorUpdate');
             Route::delete('delete/{id}', [DoctorController::class, 'Delete'])->name('DoctorDelete');

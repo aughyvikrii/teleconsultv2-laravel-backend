@@ -28,7 +28,7 @@ class HomeController extends Controller
                     ->selectRaw('appointments.aid as appointment_id, patient.pid as patient_id, patient.full_name as patient_name, doctor.pid as doctor_id, doctor.display_name as doctor_name, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, appointments.status, appointments.consul_date, ftime(appointments.consul_time) as consul_time, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, id_date(consul_date) as id_consul_date')
                     ->family()
                     ->orderBy('appointments.aid', 'DESC')
-                    ->limit(7)
+                    ->limit(5)
                     ->get();
 
         return response()->json([

@@ -361,11 +361,31 @@ class DoctorController extends Controller
             $list->where(DB::Raw('LOWER(persons.display_name)'), 'like', "%$doctor_name%");
         }
 
-        $list = $list->get();
+        if(!$request->input('paginate')) $list = $list->get();
+        else $list = $list->paginate($request->input('data_per_page', 20));
         
         return response()->json([
             'status' => true,
             'data' =>  $list
+        ]);
+    }
+
+    public function Appointments($doctor_id, Request $request)  {
+        $search = $request->input('query');
+        $paginate = $request->input('paginate', true);
+
+        $list = Appointment::joinFullInfo()
+                ->selectRaw("appointments.aid, patient.pid as patient_id, patient.full_name as patient, patient_pic(patient.profile_pic) as patient_pic, consul_date, ftime(consul_time) as consul_time, appointments.status, id_age(patient.birth_date) as age, id_date(consul_date) as id_consul_date")
+                ->orderBy('aid','DESC');
+
+        if(!$request->input('paginate')) $list = $list->get();
+        else {
+            $list = $list->paginate($request->input('data_per_page', 10));
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $list
         ]);
     }
 }
