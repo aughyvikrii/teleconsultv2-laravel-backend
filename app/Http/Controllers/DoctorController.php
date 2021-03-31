@@ -30,7 +30,9 @@ class DoctorController extends Controller
             'phone_number' => 'required',
             'gender' => 'required|in:1,2,3',
             'birth_place' => 'required',
-            'birth_date' => 'required|date|date_format:Y-m-d',
+            'birth_date_y' => 'required|numeric|max:'.date('Y'),
+            'birth_date_m' => 'required|numeric|min:1|max:12',
+            'birth_date_d' => 'required|numeric|min:1|max:31',
             'branch' => 'required|exists:branches,bid',
             'department' => 'required|exists:departments,deid',
             'weekday' => 'required|digits_between:1,7',
@@ -50,9 +52,21 @@ class DoctorController extends Controller
             'gender.required' => 'Pilih jenis kelamin',
             'gender.in' => 'Pilihan jenis kelamin tidak valid',
             'birth_place.required' => 'Masukan tempat lahir',
-            'birth_date.required' => 'Masukan tanggal lahir',
-            'birth_date.date' =>  'Format tanggal tidak valid',
-            'birth_date.date_format' => 'Format tanggal tidak valid',
+
+            'birth_date_y.required' => 'Masukan tahun lahir',
+            'birth_date_y.numeric' => 'Tahun lahir berupa angka',
+            'birth_date_y.max' => 'Tahun lahir maksimal '. date('Y'),
+
+            'birth_date_m.required' => 'Masukan bulan lahir',
+            'birth_date_m.numeric' => 'Bulan lahir berupa angka',
+            'birth_date_m.min' => 'Bulan lahir minimal 1',
+            'birth_date_m.max' => 'Bulan lahir maksimal 12',
+
+            'birth_date_d.required' => 'Masukan tanggal lahir',
+            'birth_date_d.numeric' => 'Tanggal lahir berupa angka',
+            'birth_date_d.min' => 'Tanggal lahir minimal 1',
+            'birth_date_d.max' => 'Tanggal lahir maksimal 31',
+            
             'branch.required' => 'Pilih cabang',
             'branch.exists' => 'Cabang tidak valid',
             'department.required' => 'Pilih departemen',
@@ -91,6 +105,8 @@ class DoctorController extends Controller
         }
         
         DB::BeginTransaction();
+        
+        $request->birth_date = date('Y-m-d', strtotime("$request->birth_date_y-$request->birth_date_m-$request->birth_date_d"));
 
         $user = User::create([
             'email' => $request->email,
@@ -214,7 +230,7 @@ class DoctorController extends Controller
     public function Detail($doctor_id) {
         $doctor = Person::joinGender()
                 ->selectRaw('persons.pid, persons.display_name, users.email, persons.phone_number, persons.created_at, genders.name as gender, persons.birth_date
-                , persons.birth_place')
+                , persons.birth_place, persons.sid as specialist_id, persons.gid as gender_id')
                 ->selectRaw("id_age(persons.birth_date) as age, id_date(persons.birth_date) as birth_date_alt")
                 ->selectRaw("doctor_pic(persons.profile_pic) as profile_pic")
                 ->isDoctor()
@@ -242,13 +258,14 @@ class DoctorController extends Controller
     }
 
     /**
-     * Update Doctor Data
+     * Update Doctor Data ////// UNKNOWN AND UNUSED
      * 
      * @param   doctor_id int
      * @param   Request $request
      * @return  json
      */
 
+     /*
     public function Update($doctor_id, Request $request) {
         $doctor = Doctor::find($doctor_id);
 
@@ -304,6 +321,134 @@ class DoctorController extends Controller
                 'message' => 'Berhasil update dokter',
             ]);
         }
+    }
+    */
+
+    /**
+     * Update Doctor Information
+     */
+
+    public function Update($doctor_id, Request $request) {
+        $valid = Validator::make($request->all(),[
+            'birth_date_d' => 'required|numeric|min:1|max:31',
+            'birth_date_m' => 'required|numeric|min:1|max:12',
+            'birth_date_y' => 'required|numeric|max:'.date('Y'),
+            'birth_place' => 'required',
+            'display_name' => 'required',
+            'email' => 'required|email',
+            'gender' => 'required|in:1,2,3',
+            'phone_number' => 'required',
+            'specialist' => 'required|exists:specialists,sid',
+        ],[
+            'birth_date_d.required' => 'Masukan tanggal lahir',
+            'birth_date_d.numeric' => 'Tanggal lahir berupa angka',
+            'birth_date_d.min' => 'Tanggal lahir minimal 1',
+            'birth_date_d.max' => 'Tanggal lahir maksimal 31',
+            'birth_date_m.required' => 'Masukan bulan lahir',
+            'birth_date_m.numeric' => 'Bulan lahir berupa angka',
+            'birth_date_m.min' => 'Bulan lahir minimal 1',
+            'birth_date_m.max' => 'Bulan lahir maksimal 12',
+            'birth_date_y.required' => 'Masukan tahun lahir',
+            'birth_date_y.numeric' => 'Tahun lahir berupa angka',
+            'birth_date_y.max' => 'Tahun lahir maksimal '. date('Y'),
+            'birth_place.required' => 'Masukan tempat lahir',
+            'display_name.required' => 'Masukan nama tampilan',
+            'email.required' => 'Masukan alamat email',
+            'email.email' => 'Format email tidak valid',
+            'gender.required' => 'Pilih jenis kelamin',
+            'gender.in' => 'Pilihan jenis kelamin tidak valid',
+            'phone_number.required' => 'Masukan nomor telepon',
+            'specialist.required' => 'Pilih spesialis dokter',
+            'specialist.exists' => 'Spesialis tidak valid',
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Input tidak valid',
+                'errors' => $valid->errors()
+            ]);
+        }
+
+        $doctor = Person::find($doctor_id);
+
+        if(!$doctor_id) {
+            return response()->json([
+                'status' => false,
+                'message'  => 'Dokter tidak ditemukan',
+            ]);
+        }
+
+        $phone_number = format_phone($request->phone_number);
+
+        $check_phone = Person::getByPhone($phone_number);
+
+        if($check_phone) {
+            if(@$doctor->pid !== @$phone_number->pid) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Nomor telepon sudah digunakan'
+                ]);
+            }
+        }
+
+        $check_email = User::getByEmail($request->email);
+
+        if($check_email) {
+            if($check_email->uid !== auth()->user()->uid) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Email sudah digunakan'
+                ]);
+            }
+        }
+
+        DB::BeginTransaction();
+
+        $update = $doctor->update([
+            'display_name' => $request->display_name,
+            'birth_date' => $request->birth_date,
+            'birth_place' =>  $request->birth_place,
+            'sid' => $request->specialist,
+            'phone_number' => $phone_number,
+            'gid' => $request->gender,
+        ]);
+
+        if(!$update) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update informasi',
+            ]);
+        }
+
+        $update_user = [
+            'email' => $request->email,
+            'phone_number' => $phone_number
+        ];
+
+        if($request->password) {
+            $update_user['password'] = bcrypt($request->password);
+        }
+
+        $update = auth()->user()->update($update_user);
+
+        if(!$update) {
+            DB::rollback();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal update informasi login'
+            ]);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil update informasi',
+            'data' => [
+                'pid' => $doctor->pid
+            ]
+        ]);
     }
 
     /**
@@ -376,7 +521,13 @@ class DoctorController extends Controller
 
         $list = Appointment::joinFullInfo()
                 ->selectRaw("appointments.aid, patient.pid as patient_id, patient.full_name as patient, patient_pic(patient.profile_pic) as patient_pic, consul_date, ftime(consul_time) as consul_time, appointments.status, id_age(patient.birth_date) as age, id_date(consul_date) as id_consul_date")
-                ->orderBy('aid','DESC');
+                ->orderBy('aid','DESC')
+                ->where('schedules.pid', $doctor_id);
+
+        if($search) {
+            $search = strtolower($search);
+            $list->whereRaw('(appointments.aid = ? OR LOWER(patient.full_name) LIKE ?)', [ @intval($search), "%$search%"]);
+        }
 
         if(!$request->input('paginate')) $list = $list->get();
         else {
