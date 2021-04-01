@@ -72,4 +72,8 @@ class User extends Authenticatable implements JWTSubject
             ->selectRaw('users.*, level.name as user_level')
             ->selectRaw('persons.*');
     }
+
+    public static function GetByEmail($email) {
+        return User::where('email', $email)->first();
+    }
 }

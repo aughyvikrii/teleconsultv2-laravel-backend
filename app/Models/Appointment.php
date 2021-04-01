@@ -26,7 +26,7 @@ class Appointment extends Model
         'department_json' => 'json',
         'branch_json' => 'json',
         'bill_json' => 'json',
-        'is_active' => 'bool'
+        'is_active' => 'bool',
     ];
 
     public function scopeSelectForUser($query) {

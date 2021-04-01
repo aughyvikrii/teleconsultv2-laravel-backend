@@ -382,9 +382,8 @@ class DoctorController extends Controller
         $phone_number = format_phone($request->phone_number);
 
         $check_phone = Person::getByPhone($phone_number);
-
         if($check_phone) {
-            if(@$doctor->pid !== @$phone_number->pid) {
+            if(@$doctor->pid !== @$check_phone->pid) {
                 return response()->json([
                     'status'  => false,
                     'message' => 'Nomor telepon sudah digunakan'
@@ -395,7 +394,7 @@ class DoctorController extends Controller
         $check_email = User::getByEmail($request->email);
 
         if($check_email) {
-            if($check_email->uid !== auth()->user()->uid) {
+            if($check_email->uid !== $doctor->uid) {
                 return response()->json([
                     'status'  => false,
                     'message' => 'Email sudah digunakan'

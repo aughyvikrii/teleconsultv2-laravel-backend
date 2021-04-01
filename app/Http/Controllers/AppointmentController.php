@@ -266,6 +266,9 @@ class AppointmentController extends Controller
             ->selectRaw('soaps.subjective, soaps.objective, soaps.assesment, soaps.plan, laboratories.recommendation as lab_recom, laboratories.diagnosis as lab_diagnosis, laboratories.allergy as lab_allergy, radiologies.recommendation as rad_recom, radiologies.diagnosis as rad_diagnosis, radiologies.allergy as rad_allergy, pharmacies.recommendation as phar_recom, pharmacies.diagnosis as phar_diagnosis, pharmacies.allergy as phar_allergy')
             ->doctorUID(auth()->user()->uid);
         }
+        else if (is_admin()) {
+            $data->selectRaw('midtrans_paid_log');
+        }
 
         $data = $data->first();
 
