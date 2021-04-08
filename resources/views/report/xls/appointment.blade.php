@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Keuangan</title>
+    <title>Laporan Perjanjian</title>
 </head>
 <body>
     <table>
         <tr>
-            <td colspan="4" style="font-size: 24pt; font-weight: bold; " > Laporan Keuangan </td>
+            <td colspan="4" style="font-size: 24pt; font-weight: bold; " > Laporan Perjanjian </td>
         </tr>
         <tr>
             <td colspan="2" style="font-weight: bold;" > Tanggal </td>

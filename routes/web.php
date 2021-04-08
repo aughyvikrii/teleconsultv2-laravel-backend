@@ -45,6 +45,7 @@ Route::group(['middleware' => 'access'], function(){
         Route::group(['prefix' => 'report'], function(){
             Route::get('finance', [ReportController::class, 'print_finance']);
             Route::get('appointment', [ReportController::class, 'print_appointment']);
+            Route::get('doctor', [ReportController::class, 'print_doctor']);
         });
     });
 });

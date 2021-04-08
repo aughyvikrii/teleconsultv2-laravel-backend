@@ -197,17 +197,45 @@ class DoctorController extends Controller
      * @return json
      */
 
-    public function List(Request $request) {
-        $list = Person::selectRaw('persons.pid as doctor_id, persons.display_name, users.email, persons.phone_number, persons.created_at')
+    public function List(Request $request, $for_print=false) {
+
+        if($for_print) {
+            $list = Person::JoinGender()
+                ->JoinReligion()
+                ->JoinMarriedStatus()
+                ->JoinTitle()
+                ->JoinIdentityType()
+                ->selectRaw('persons.*, users.email')
                 ->selectRaw("doctor_pic(persons.profile_pic) as profile_pic")
                 ->isDoctor();
-
-        if($query = $request->input('query')) {
-            $query = strtolower($query);
-            $list->whereRaw('(persons.pid = ? OR LOWER(persons.display_name) LIKE ? OR LOWER(users.email) LIKE ? OR persons.phone_number LIKE ?)', [
-                @intval($query), "%{$query}%", "%{$query}%", "%{$query}%"
-            ]);
+        } else {
+            $list = Person::selectRaw('persons.pid as doctor_id, persons.display_name, users.email, persons.phone_number, persons.created_at')
+                ->selectRaw("doctor_pic(persons.profile_pic) as profile_pic")
+                ->isDoctor();
         }
+
+        $name = $request->name;
+        $list->when($name, function($query) use ($name){
+            $query->whereRaw('LOWER(persons.display_name) LIKE ?', ["%". strtolower($name) ."%"]);
+        });
+
+        $email = $request->email;
+        $list->when($email, function($query) use ($email){
+            $query->whereRaw('LOWER(users.email) LIKE ?', ["%". strtolower($email) ."%"]);
+        });
+
+        $phone_number = $request->phone_number;
+        $list->when($phone_number, function($query) use ($phone_number){
+            $phone_number = format_phone($phone_number);
+            $query->whereRaw("persons.phone_number LIKE '%$phone_number%'");
+        });
+
+        $specialist_id = $request->query('specialist_id');
+        $specialist_ids = $specialist_id ? explode(",", $specialist_id) : [];
+
+        $list->when($specialist_ids, function($query) use ($specialist_ids){
+            $query->whereIn('specialists.sid', $specialist_ids);
+        });
 
         if(!$request->input('paginate')) $list = $list->get();
         else {
