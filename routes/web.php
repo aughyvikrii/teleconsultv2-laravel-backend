@@ -40,6 +40,13 @@ Route::group(['middleware' => 'access'], function(){
            Route::get('print', [ReportController::class, 'Print']);
        }); 
     });
+
+    Route::group(['middleware' => 'access:admin'], function(){
+        Route::group(['prefix' => 'report'], function(){
+            Route::get('finance', [ReportController::class, 'print_finance']);
+            Route::get('appointment', [ReportController::class, 'print_appointment']);
+        });
+    });
 });
 
 Route::get('{any}', function () {

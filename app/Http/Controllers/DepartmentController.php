@@ -83,7 +83,7 @@ class DepartmentController extends Controller
 
     public function List(Request $request) {
         
-        if($request->input('all_data')) {
+        if(!$request->input('paginate')) {
             $list = Department::selectRaw('departments.name, departments.deid as department_id')
                     ->active()
                     ->orderBy('departments.name', 'ASC')

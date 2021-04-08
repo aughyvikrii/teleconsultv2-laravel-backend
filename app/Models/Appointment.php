@@ -59,7 +59,8 @@ class Appointment extends Model
                 ->JoinDoctor($type)
                 ->joinDepartment($type)
                 ->joinBranch($type)
-                ->JoinBill($type);
+                ->JoinBill($type)
+                ->JoinSpecialist($type);
     }
 
     public function scopeJoinPatient($query, $type = 'join') {
@@ -85,6 +86,18 @@ class Appointment extends Model
 
         if(!$this->checkJoin($query, 'persons as doctor')) {
             return $query->$join('persons as doctor', 'doctor.pid', '=', 'schedules.pid');
+        }
+
+        return $query;
+    }
+
+    public function scopeJoinSpecialist($query, $type = 'join') {
+        $join = self::joinType($type);
+
+        $query->JoinDoctor();
+
+        if(!$this->checkJoin($query, 'specialists')) {
+            return $query->$join('specialists', 'specialists.sid', '=', 'doctor.sid');
         }
 
         return $query;

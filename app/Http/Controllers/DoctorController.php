@@ -379,6 +379,8 @@ class DoctorController extends Controller
             ]);
         }
 
+        $user = User::find($doctor->uid);
+
         $phone_number = format_phone($request->phone_number);
 
         $check_phone = Person::getByPhone($phone_number);
@@ -394,7 +396,7 @@ class DoctorController extends Controller
         $check_email = User::getByEmail($request->email);
 
         if($check_email) {
-            if($check_email->uid !== $doctor->uid) {
+            if($check_email->uid !== $user->uid) {
                 return response()->json([
                     'status'  => false,
                     'message' => 'Email sudah digunakan'
@@ -429,7 +431,7 @@ class DoctorController extends Controller
             $update_user['password'] = bcrypt($request->password);
         }
 
-        $update = auth()->user()->update($update_user);
+        $update = $user->update($update_user);
 
         if(!$update) {
             DB::rollback();

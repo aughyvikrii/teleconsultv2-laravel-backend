@@ -319,7 +319,7 @@ class PersonController extends Controller
             $list->whereRaw('villages.vid = ?', [$village_id]);
         }
 
-        if(!empty($request->input('all_data'))) {
+        if(!empty($request->input('paginate'))) {
             $list = $list->paginate(25);
         } else {
             $list = $list->paginate(25);

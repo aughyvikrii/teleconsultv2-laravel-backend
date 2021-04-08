@@ -19,6 +19,8 @@ use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SoapController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -208,6 +210,16 @@ Route::group(['middleware' => 'access'],  function(){
         Route::match(['GET', 'POST'],'appointment/{id}', [AppointmentController::class, 'Detail']);
         Route::post('soap/{aid}/input', [SoapController::class, 'Input']);
         Route::post('soap/{aid}/update', [SoapController::class, 'Update']);
+    });
+
+    Route::group(['middleware' => 'access:admin'], function(){
+        Route::group(['prefix' => 'patient'], function(){
+            Route::get('list', [PatientController::class, 'List']);
+        });
+
+        Route::group(['prefix' => 'report'], function(){
+            Route::get('finance', [ReportController::class, 'finance']);
+        });
     });
 });
 

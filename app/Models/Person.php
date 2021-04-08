@@ -165,4 +165,9 @@ class Person extends Model
 
         return Person::create($data);
     }
+
+    public function scopePatient($query) {
+        return $query->JoinUser('left')
+                ->whereRaw("(users.lid = 3 OR persons.uid IS NULL)");
+    }
 }

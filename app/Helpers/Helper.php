@@ -30,6 +30,12 @@ if(!function_exists('format_phone')) {
     }
 }
 
+if(!function_exists('format_rupiah')) {
+    function format_rupiah($amount, $prefix = false) {
+        return ($prefix ? 'Rp ' : '') . number_format($amount, 0, ',','.');
+    }
+}
+
 if(!function_exists('_encode')) {
     /**
      * Simple encode string with base64 key
@@ -254,5 +260,33 @@ if(!function_exists('array_remove')) {
         }
 
         return array_diff_key($arr_1, array_flip($index));
+    }
+}
+
+if(!function_exists('payment_status')) {
+    function payment_status($status, $lang = 'id') {
+        if($status == 'paid') {
+            return 'Lunas';
+        } else if ($status == 'cancel') {
+            return 'Dibatalkan';
+        } else if ($status == 'expire') {
+            return 'Kedaluwarsa';
+        } else if ($status == 'waiting_payment') {
+            return 'Menunggu Pembayaran';
+        } else return 'Semua';
+    }
+}
+
+if(!function_exists('appointment_status')) {
+    function appointment_status($status, $lang = 'id') {
+        if($status == 'waiting_consul') {
+            return 'Menunggu Konsultasi';
+        } else if ( $status == 'waiting_payment' ) {
+        return 'Menunggu Pembayaran';
+        } else if ( $status == 'done' ) {
+        return 'Selesai Konsultasi';
+        } else if ( $status == 'payment_cancel' ) {
+        return 'Pembayaran Dibatalkan';
+        } else return 'Semua';
     }
 }

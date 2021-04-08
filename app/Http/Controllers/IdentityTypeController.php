@@ -59,7 +59,7 @@ class IdentityTypeController extends Controller
     public function List(Request $request) {
         $list = IdentityType::orderBy('name','ASC');
 
-        if($request->all_data) {
+        if(!$request->paginate) {
             $list = $list->selectRaw('name, itid')->get();
         } else {
             $list = $list->paginate(25);

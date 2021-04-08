@@ -232,14 +232,71 @@ class AppointmentController extends Controller
     }
 
     public function List(Request $request) {
-        $list = Appointment::joinFullInfo()
-                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at")
+        $patient = Appointment::joinFullInfo()
+                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, id_date(appointments.consul_date) as id_consul_date")
                 ->orderBy('aid','DESC');
 
-        if(!$request->input('paginate')) $list = $list->get();
-        else {
-            $list = $list->paginate($request->input('data_per_page', 10));
-        }
+        $start_date = $request->query('start_date');
+        $patient->when($start_date, function($query) use ($start_date) {
+            $query->whereRaw("appointments.consul_date >= ?", [$start_date]);
+        });
+
+        $end_date = $request->query('end_date');
+        $patient->when($end_date, function($query) use ($end_date) {
+            $query->whereRaw("appointments.consul_date <= ?", [$end_date]);
+        });
+
+        $branch_id = $request->query('branch_id');
+        $branch_ids = $branch_id ? explode(",", $branch_id) : [];
+
+        $patient->when($branch_ids, function($query) use ($branch_ids){
+            $query->whereIn('branches.bid', $branch_ids);
+        });
+
+        $department_id = $request->query('department_id');
+        $department_ids = $department_id ? explode(",", $department_id) : [];
+
+        $patient->when($department_ids, function($query) use ($department_ids){
+            $query->whereIn('departments.deid', $department_ids);
+        });
+
+        $specialist_id = $request->query('specialist_id');
+        $specialist_ids = $specialist_id ? explode(",", $specialist_id) : [];
+
+        $patient->when($specialist_ids, function($query) use ($specialist_ids){
+            $query->whereIn('specialists.sid', $specialist_ids);
+        });
+
+        $doctor_id = $request->query('doctor_id');
+        $doctor_ids = $doctor_id ? explode(",", $doctor_id) : [];
+
+        $patient->when($doctor_ids, function($query) use ($doctor_ids){
+            $query->whereIn('doctor.pid', $doctor_ids);
+        });
+
+        $patient_id = $request->query('patient_id');
+        $patient_ids = $patient_id ? explode(",", $patient_id) : [];
+
+        $patient->when($patient_ids, function($query) use ($patient_ids){
+            $query->whereIn('patient.pid', $patient_ids);
+        });
+
+        $appointment_id = $request->query('appointment_id');
+        $appointment_ids = $appointment_id ? explode(",", $appointment_id) : [];
+
+        $patient->when($appointment_ids, function($query) use ($appointment_ids){
+            $query->whereIn('appointments.aid', $appointment_ids);
+        });
+
+        $status = $request->query('status');
+        $statuses = $status ? explode(",", $status) : [];
+
+        $patient->when($statuses, function($query) use ($statuses){
+            $query->whereIn('appointments.status', $statuses);
+        });
+        
+        if($request->query('paginate')=='true') $list = $patient->paginate($request->query('data_per_page', 10));
+        else $list = $patient->get();
 
         $list->makeHidden([
             'create_id', 'delete_id', 'deleted_at', 'is_active'

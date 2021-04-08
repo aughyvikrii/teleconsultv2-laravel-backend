@@ -20,7 +20,7 @@ class BranchController extends Controller
 
     public function List(Request $request) {
         
-        if($request->input('all_data')) {
+        if(!$request->input('paginate')) {
             $list = Branch::selectRaw('branches.bid as branch_id, branches.name, branch_pic(branches.thumbnail) as thumbnail')
                 ->active()
                 ->orderBy('branches.name', 'ASC')
@@ -118,6 +118,9 @@ class BranchController extends Controller
             'espay_api_key' => $request->espay_api_key,
             'espay_password' => $request->espay_password,
             'espay_signature' => $request->espay_signature,
+            'midtrans_id_merchant' => $request->midtrans_id_merchant,
+            'midtrans_client_key' => $request->midtrans_client_key,
+            'midtrans_server_key' => $request->midtrans_server_key,
             'thumbnail' => $thumbnail_name,
             'create_id' => Auth::user()->uid,
         ]);
@@ -210,6 +213,9 @@ class BranchController extends Controller
             'espay_api_key' => $request->espay_api_key,
             'espay_password' => $request->espay_password,
             'espay_signature' => $request->espay_signature,
+            'midtrans_id_merchant' => $request->midtrans_id_merchant,
+            'midtrans_client_key' => $request->midtrans_client_key,
+            'midtrans_server_key' => $request->midtrans_server_key,
         ]);
 
         $old_thumbnail = @$branch->thumbnail;
