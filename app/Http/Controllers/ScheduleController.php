@@ -27,30 +27,66 @@ class ScheduleController extends Controller
                 ->selectRaw("doctor_pic(persons.profile_pic) as profile_pic")
                 ->joinFullInfo();
 
-        if($doctor_name = $request->input('filters.doctor')) {
-            $doctor_name = strtolower($doctor_name);
-            $list->whereRaw('LOWER(persons.display_name) LIKE ?', ["%$doctor_name%"]);
-        }
+        $doctor_id = $request->query('doctor_id');
+        $doctor_ids = $doctor_id ? explode(",", $doctor_id) : [];
 
-        if($specialist_id = $request->input('filters.specialist')) {
-            if(!is_array($specialist_id)) $specialist_id = [$specialist_id];
-            $list->whereIn('specialists.sid',$specialist_id);
-        }
+        $list->when($doctor_ids, function($query) use ($doctor_ids){
+            $query->whereIn('persons.pid', $doctor_ids);
+        });
 
-        if($branch_id = $request->input('filters.branch')) {
-            if(!is_array($branch_id)) $branch_id = [$branch_id];
-            $list->whereIn('branches.bid', $branch_id);
-        }
+        $branch_id = $request->query('branch_id');
+        $branch_ids = $branch_id ? explode(",", $branch_id) : [];
 
-        if($department_id = $request->input('filters.department')) {
-            if(!is_array($department_id)) $department_id = [$department_id];
-            $list->whereIn('departments.deid', $department_id);
-        }
+        $list->when($branch_ids, function($query) use ($branch_ids){
+            $query->whereIn('branches.bid', $branch_ids);
+        });
 
-        if($weekday = $request->input('filters.weekday')) {
-            if(!is_array($weekday)) $weekday = [$weekday];
-            $list->whereIn('schedules.weekday', $weekday);
-        }
+        $department_id = $request->query('department_id');
+        $department_ids = $department_id ? explode(",", $department_id) : [];
+
+        $list->when($department_ids, function($query) use ($department_ids){
+            $query->whereIn('departments.deid', $department_ids);
+        });
+
+        $specialist_id = $request->query('specialist_id');
+        $specialist_ids = $specialist_id ? explode(",", $specialist_id) : [];
+
+        $list->when($specialist_ids, function($query) use ($specialist_ids){
+            $query->whereIn('specialists.sid', $specialist_ids);
+        });
+
+
+        $weekday_id = $request->query('weekday_id');
+        $weekday_ids = $weekday_id ? explode(",", $weekday_id) : [];
+
+        $list->when($weekday_ids, function($query) use ($weekday_ids){
+            $query->whereIn('schedules.weekday', $weekday_ids);
+        });
+
+        // if($doctor_name = $request->input('filters.doctor')) {
+        //     $doctor_name = strtolower($doctor_name);
+        //     $list->whereRaw('LOWER(persons.display_name) LIKE ?', ["%$doctor_name%"]);
+        // }
+
+        // if($specialist_id = $request->input('filters.specialist')) {
+        //     if(!is_array($specialist_id)) $specialist_id = [$specialist_id];
+        //     $list->whereIn('specialists.sid',$specialist_id);
+        // }
+
+        // if($branch_id = $request->input('filters.branch')) {
+        //     if(!is_array($branch_id)) $branch_id = [$branch_id];
+        //     $list->whereIn('branches.bid', $branch_id);
+        // }
+
+        // if($department_id = $request->input('filters.department')) {
+        //     if(!is_array($department_id)) $department_id = [$department_id];
+        //     $list->whereIn('departments.deid', $department_id);
+        // }
+
+        // if($weekday = $request->input('filters.weekday')) {
+        //     if(!is_array($weekday)) $weekday = [$weekday];
+        //     $list->whereIn('schedules.weekday', $weekday);
+        // }
 
         if(!$request->paginate) $list = $list->get();
         else {
