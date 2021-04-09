@@ -16,31 +16,31 @@
             <td colspan="2" style="font-weight: bold;" > Cabang </td>
         </tr>
         <tr>
-            <td colspan="2">{{ @$filter['date'] }}</td>
-            <td colspan="2">{{ @$filter['branch'] }}</td>
+            <td colspan="2">{{ @$filter['date'] ? @$filter['date'] : 'Semua' }}</td>
+            <td colspan="2">{{ @$filter['branch'] ? @$filter['branch'] : 'Semua' }}</td>
         </tr>
         <tr>
             <td colspan="2" style="font-weight: bold;">Departemen</td>
             <td colspan="2" style="font-weight: bold;">Spesialis</td>
         </tr>
         <tr>
-            <td colspan="2">{{ @$filter['department'] }}</td>
-            <td colspan="2">{{ @$filter['specialist'] }}</td>
+            <td colspan="2">{{ @$filter['department'] ? @$filter['department'] : 'Semua' }}</td>
+            <td colspan="2">{{ @$filter['specialist'] ? @$filter['specialist'] : 'Semua' }}</td>
         </tr>
         <tr>
             <td colspan="2" style="font-weight: bold;">Dokter</td>
             <td colspan="2" style="font-weight: bold;">Pasien</td>
         </tr>
         <tr>
-            <td colspan="2">{{ @$filter['doctor'] }}</td>
-            <td colspan="2">{{ @$filter['patient'] }}</td>
+            <td colspan="2">{{ @$filter['doctor'] ? @$filter['doctor'] : 'Semua' }}</td>
+            <td colspan="2">{{ @$filter['patient'] ? @$filter['patient'] : 'Semua' }}</td>
         </tr>
         <tr>
             <td colspan="2" style="font-weight: bold;">Status</td>
             <td colspan="2" style="font-weight: bold;">Halaman</td>
         </tr>
         <tr>
-            <td colspan="2">{{ @$filter['status'] }}</td>
+            <td colspan="2">{{ @$filter['status'] ? @$filter['status'] : 'Semua' }}</td>
             <td colspan="2">{{ @$filter['page'] }}</td>
         </tr>
     </table>

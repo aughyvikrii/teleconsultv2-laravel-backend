@@ -44,7 +44,7 @@
 </head>
 <body class="A4">
     <section class="sheet padding-10mm">
-        <h1 style="margin-bottom: 0px;">Daftar Dokter</h1>
+        <h1 style="margin-bottom: 0px;">Daftar Pasien</h1>
         <small style="font-size: 10pt;">UID: {{ $id }}</small>
         <hr>
         <table>
@@ -58,16 +58,10 @@
             </tr>
             <tr>
                 <td class="label">Nomor Telepon</td>
-                <td class="label">Spesialis</td>
-            </tr>
-            <tr>
-                <td>{{ @$filter['phone_number'] ? @$filter['phone_number'] : 'Semua' }}</td>
-                <td>{{ @$filter['specialist'] ? @$filter['specialist'] : 'Semua' }}</td>
-            </tr>
-            <tr>
                 <td class="label">Halaman</td>
             </tr>
             <tr>
+                <td>{{ @$filter['phone_number'] ? @$filter['phone_number'] : 'Semua' }}</td>
                 <td>{{ @$filter['page'] }}</td>
             </tr>
         </table>
@@ -79,7 +73,7 @@
                     <th>Nama</th>
                     <th>Email</th>
                     <th>Nomor Telp</th>
-                    <th>Spesialis</th>
+                    <th>Kota</th>
                     <th>Tanggal Didaftarkan</th>
                 </tr>
             </thead>
@@ -87,10 +81,10 @@
                 @foreach($items as $item)
                 <tr>
                     <td>{{ $item->pid }}</td>
-                    <td>{{ $item->display_name }}</td>
-                    <td>{{ $item->email }}</td>
+                    <td>{{ $item->full_name }}</td>
+                    <td>{{ $item->email ? $item->email : '-' }}</td>
                     <td>{{ $item->phone_number }}</td>
-                    <td>{{ $item->alt_name }}</td>
+                    <td>{{ $item->city }}</td>
                     <td>{{ $item->created_at }}</td>
                 </tr>
                 @endforeach

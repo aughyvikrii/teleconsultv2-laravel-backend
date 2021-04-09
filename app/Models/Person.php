@@ -21,6 +21,19 @@ class Person extends Model
         ->whereRaw('users.lid = ?', [2]);
     }
 
+    function joinType($type) {
+        return ($type === 'join') ? 'join' : $type."join";
+    }
+
+    function checkJoin($query, $table) {
+        $joins = $query->getQuery()->joins;
+        if(!$joins) return false;
+        foreach($joins as $join) {
+            if($join->table == $table) return true;
+        }
+        return false;
+    }
+
     public function scopeJoinFullInfo($query) {
         return $query->joinGender()
                 ->joinUser('left')
@@ -39,38 +52,56 @@ class Person extends Model
     }
 
     public function scopeJoinUser($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('users', 'users.uid', '=', 'persons.uid');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'users')) {
+            $query->$join('users', 'users.uid', '=', 'persons.uid');
+        }
+        return $query;
     }
 
     public function scopeJoinGender($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('genders', 'genders.gid', '=', 'persons.gid')
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'genders')) {
+            $query->$join('genders', 'genders.gid', '=', 'persons.gid')
             ->selectRaw('genders.name as gender');
+        }
+        return $query;
     }
 
     public function scopeJoinReligion($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('religions', 'religions.rid', '=', 'persons.rid')
-            ->selectRaw('religions.name as religion');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'religions')) {
+            $query->$join('religions', 'religions.rid', '=', 'persons.rid')
+                ->selectRaw('religions.name as religion');
+        }
+        return $query;
     }
 
     public function scopeJoinMarriedStatus($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('married_status', 'married_status.msid', '=', 'persons.msid')
-                ->selectRaw('married_status.name as married_status');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'married_status')) {
+            $query->$join('married_status', 'married_status.msid', '=', 'persons.msid')
+                    ->selectRaw('married_status.name as married_status');
+        }
+        return $query;
     }
 
     public function scopeJoinTitle($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('titles', 'titles.tid', '=', 'persons.tid')
-                ->selectRaw('titles.name as title, titles.short as title_short');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'titles')) {
+            $query->$join('titles', 'titles.tid', '=', 'persons.tid')
+                    ->selectRaw('titles.name as title, titles.short as title_short');
+        }
+        return $query;
     }
 
     public function scopeJoinIdentityType($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('identity_type', 'identity_type.itid', '=', 'persons.itid')
-                ->selectRaw('identity_type.name as identity_type');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'identity_type')) {
+            $query->$join('identity_type', 'identity_type.itid', '=', 'persons.itid')
+                    ->selectRaw('identity_type.name as identity_type');
+        }
+        return $query;
     }
 
     public function scopeFamilyMember($query, $pid) {
@@ -78,35 +109,68 @@ class Person extends Model
     }
 
     public function scopeJoinSpecialist($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('specialists', 'specialists.sid', '=', 'persons.sid')
-                ->selectRaw('specialists.alt_name, specialists.title');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'specialists')) {
+            $query->$join('specialists', 'specialists.sid', '=', 'persons.sid')
+                    ->selectRaw('specialists.alt_name, specialists.title');
+        }
+        return $query;
     }
 
     public function scopeJoinFamily($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('family_tree', 'family_tree.fmid', '=', 'persons.fmid')
-                ->$join('persons as family', 'family.pid', '=', 'family_tree.pid');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'family_tree')) {
+            $query->$join('family_tree', 'family_tree.fmid', '=', 'persons.fmid');
+
+            if(!$this->checkJoin($query, 'persons as family')) {
+                $query->$join('persons as family', 'family.pid', '=', 'family_tree.pid');
+            }
+        }
+        return $query;
     }
 
     public function scopeJoinVillage($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('villages', 'villages.vid', '=', 'persons.vid');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'villages')) {
+            $query->$join('villages', 'villages.vid', '=', 'persons.vid');
+        }
+        
+        $query->JoinDistrict()->JoinCity()->JoinProvince()->JoinIsland();
+
+        return $query;
+    }
+
+    public function scopeJoinIsland($query, $type = 'join') {
+        $join = self::joinType($type);
+        if(!$this->CheckJoin($query, 'islands')) {
+            $query->$join('islands', 'islands.iid', '=', 'provinces.iid' );
+        }
+
+        return $query;
     }
 
     public function scopeJoinDistrict($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('districts', 'districts.did', '=', 'villages.did');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'districts')) {
+            $query->$join('districts', 'districts.did', '=', 'villages.did');
+        }
+        return $query;
     }
 
     public function scopeJoinCity($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('cities', 'districts.cid', '=', 'cities.cid');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'cities')) {
+            $query->$join('cities', 'districts.cid', '=', 'cities.cid');
+        }
+        return $query;
     }
 
     public function scopeJoinProvince($query, $type='join') {
-        $join = ($type == 'join') ? 'join' : "{$type}join";
-        return $query->$join('provinces', 'provinces.pvid', '=', 'cities.pvid');
+        $join = self::joinType($type);
+        if(!$this->checkJoin($query, 'provinces')) {
+            $query->$join('provinces', 'provinces.pvid', '=', 'cities.pvid');
+        }
+        return $query;
     }
 
     public static function PhoneUsed($phone_number) {

@@ -53,31 +53,31 @@
                 <td class="label">Cabang</td>
             </tr>
             <tr>
-                <td>{{ @$filter['date'] }}</td>
-                <td>{{ @$filter['branch'] }}</td>
+                <td>{{ @$filter['date'] ? @$filter['date'] : 'Semua' }}</td>
+                <td>{{ @$filter['branch'] ? @$filter['branch'] : 'Semua' }}</td>
             </tr>
             <tr>
                 <td class="label">Departemen</td>
                 <td class="label">Spesialis</td>
             </tr>
             <tr>
-                <td>{{ @$filter['department'] }}</td>
-                <td>{{ @$filter['specialist'] }}</td>
+                <td>{{ @$filter['department'] ? @$filter['department'] : 'Semua' }}</td>
+                <td>{{ @$filter['specialist'] ? @$filter['specialist'] : 'Semua' }}</td>
             </tr>
             <tr>
                 <td class="label">Dokter</td>
                 <td class="label">Pasien</td>
             </tr>
             <tr>
-                <td>{{ @$filter['doctor'] }}</td>
-                <td>{{ @$filter['patient'] }}</td>
+                <td>{{ @$filter['doctor'] ? @$filter['doctor'] : 'Semua' }}</td>
+                <td>{{ @$filter['patient'] ? @$filter['patient'] : 'Semua' }}</td>
             </tr>
             <tr>
                 <td class="label">Status</td>
                 <td class="label">Halaman</td>
             </tr>
             <tr>
-                <td>{{ @$filter['status'] }}</td>
+                <td>{{ @$filter['status'] ? @$filter['status'] : 'Semua' }}</td>
                 <td>{{ @$filter['page'] }}</td>
             </tr>
         </table>

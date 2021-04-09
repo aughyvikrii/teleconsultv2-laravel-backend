@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Dokter</title>
+    <title>Daftar Pasien</title>
 </head>
 <body>
 
 <table>
         <tr>
-            <td colspan="4" style="font-size: 24pt; font-weight: bold; " > Daftar Dokter </td>
+            <td colspan="4" style="font-size: 24pt; font-weight: bold; " > Daftar Pasien </td>
         </tr>
         <tr>
             <td colspan="2" style="font-weight: bold;" > Nama </td>
@@ -22,16 +22,10 @@
         </tr>
         <tr>
             <td colspan="2" style="font-weight: bold;">Nomor Telepon</td>
-            <td colspan="2" style="font-weight: bold;">Spesialis</td>
-        </tr>
-        <tr>
-            <td colspan="2">{{ @$filter['phone_number'] ? @$filter['phone_number'] : 'Semua' }}</td>
-            <td colspan="2">{{ @$filter['specialist'] ? @$filter['specialist'] : 'Semua' }}</td>
-        </tr>
-        <tr>
             <td colspan="2" style="font-weight: bold;">Halaman</td>
         </tr>
         <tr>
+            <td colspan="2">{{ @$filter['phone_number'] ? @$filter['phone_number'] : 'Semua' }}</td>
             <td colspan="2">{{ @$filter['page'] }}</td>
         </tr>
     </table>
@@ -60,7 +54,7 @@
                 @foreach($items as $item)
                 <tr>
                     <td>{{ $item->pid }}</td>
-                    <td>{{ $item->display_name }}</td>
+                    <td>{{ $item->full_name }}</td>
                     <td>{{ $item->email }}</td>
                     <td>{{ $item->phone_number }}</td>
                     <td>{{ $item->identity_type }}</td>

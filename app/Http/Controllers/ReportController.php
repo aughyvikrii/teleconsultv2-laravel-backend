@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use \App\Models\{Appointment, LogReport, Soap, Branch, Department, Person, Specialist};
-use App\Exports\{FinanceReport, AppointmentReport, DoctorReport};
+use App\Exports\{FinanceReport, AppointmentReport, DoctorReport, PatientReport};
 
-use App\Http\Controllers\{AppointmentController, DoctorController};
+use App\Http\Controllers\{AppointmentController, DoctorController, PatientController};
 
 use DB, PDF, Excel;
 
@@ -462,6 +462,54 @@ class ReportController extends Controller
             return $pdf->stream('Daftar_Dokter_'. $uniq . '.pdf');
         } else {
             return Excel::download(new DoctorReport($append), 'Daftar_Dokter_'. $uniq . '.xlsx');
+        }
+    }
+
+    public function print_patient(Request $request) {
+        $cont = new PatientController;
+        $list = $cont->List($request, true)->original;
+
+        $paginate = $request->query('paginate');
+
+        if($paginate=='true') $data = $list['data']->items();
+        else $data = $list['data'];
+
+        $type = $request->query('print_type', 'pdf');
+
+        $uniq = uniqid();
+        $specialist = '';
+
+        $name = $request->name;
+        $email = $request->email;
+        $phone_number = $request->phone_number;
+
+        if(!$paginate) $page = '1/1';
+        else $page = $list['data']->currentPage() . '/' . $list['data']->lastPage(0);
+        
+        $filter = [
+            'name' => $name,
+            'email' => $email,
+            'phone_number' => $phone_number,
+            'page' => $page
+        ];
+
+        $append = [
+            'items' => $data,
+            'id' => $uniq,
+            'filter' => $filter
+        ];
+
+        if($type === 'pdf') {
+            $pdf = PDF::loadView('report.pdf.patient', $append);
+    
+            $pdf->setOptions([
+                'defaultPaperSize' => 'a4',
+                'defaultFont' => 'Times New Roman'
+            ]);
+    
+            return $pdf->stream('Daftar_Pasien_'. $uniq . '.pdf');
+        } else {
+            return Excel::download(new PatientReport($append), 'Daftar_Pasien_'. $uniq . '.xlsx');
         }
     }
 }
