@@ -20,13 +20,13 @@ class BranchController extends Controller
 
     public function List(Request $request) {
         
-        if(!$request->input('paginate')) {
-            $list = Branch::selectRaw('branches.bid as branch_id, branches.name, branch_pic(branches.thumbnail) as thumbnail')
+        if($request->input('paginate')!='true') {
+            $list = Branch::selectRaw('branches.*, branches.bid as branch_id, branches.name, branch_pic(branches.thumbnail) as thumbnail')
                 ->active()
                 ->orderBy('branches.name', 'ASC')
                 ->get();
         } else {
-            $list = Branch::selectRaw("branches.bid as branch_id, branches.code, branches.name
+            $list = Branch::selectRaw("branches.*, branches.bid as branch_id, branches.code, branches.name
                     , branch_pic(branches.thumbnail) as thumbnail, branches.is_active")
                     ->orderBy('name','ASC');
         

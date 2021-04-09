@@ -47,6 +47,9 @@ Route::group(['middleware' => 'access'], function(){
             Route::get('appointment', [ReportController::class, 'print_appointment']);
             Route::get('doctor', [ReportController::class, 'print_doctor']);
             Route::get('patient', [ReportController::class, 'print_patient']);
+            Route::get('branch', [ReportController::class, 'print_branch']);
+            Route::get('department', [ReportController::class, 'print_department']);
+            Route::get('specialist', [ReportController::class, 'print_specialist']);
         });
     });
 });

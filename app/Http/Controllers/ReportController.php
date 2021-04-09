@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use \App\Models\{Appointment, LogReport, Soap, Branch, Department, Person, Specialist};
-use App\Exports\{FinanceReport, AppointmentReport, DoctorReport, PatientReport};
+use App\Exports\{FinanceReport, AppointmentReport, DoctorReport, PatientReport, PrintReport};
 
-use App\Http\Controllers\{AppointmentController, DoctorController, PatientController};
+use App\Http\Controllers\{AppointmentController, DoctorController, PatientController, BranchController, DepartmentController, SpecialistController};
 
 use DB, PDF, Excel;
 
@@ -510,6 +510,124 @@ class ReportController extends Controller
             return $pdf->stream('Daftar_Pasien_'. $uniq . '.pdf');
         } else {
             return Excel::download(new PatientReport($append), 'Daftar_Pasien_'. $uniq . '.xlsx');
+        }
+    }
+
+    public function print_branch(Request $request) {
+        $cont = new BranchController;
+        $list = $cont->List($request, true)->original;
+
+        $paginate = $request->query('paginate');
+
+        if($paginate=='true') $data = $list['data']->items();
+        else $data = $list['data'];
+
+        $type = $request->query('print_type', 'pdf');
+
+        $uniq = uniqid();
+
+        if(!$paginate) $page = '1/1';
+        else $page = $list['data']->currentPage() . '/' . $list['data']->lastPage(0);
+        
+        $filter = [
+            'page' => $page
+        ];
+
+        $append = [
+            'items' => $data,
+            'id' => $uniq,
+            'filter' => $filter
+        ];
+        if($type === 'pdf') {
+            $pdf = PDF::loadView('report.pdf.branch', $append);
+    
+            $pdf->setOptions([
+                'defaultPaperSize' => 'a4',
+                'defaultFont' => 'Times New Roman'
+            ]);
+    
+            return $pdf->stream('Daftar_Cabang_'. $uniq . '.pdf');
+        } else {
+            return Excel::download(new PrintReport('branch', $append), 'Daftar_Cabang_'. $uniq . '.xlsx');
+        }
+    }
+
+    public function print_department(Request $request) {
+        $cont = new DepartmentController;
+        $list = $cont->List($request, true)->original;
+
+        $paginate = $request->query('paginate');
+
+        if($paginate=='true') $data = $list['data']->items();
+        else $data = $list['data'];
+
+        $type = $request->query('print_type', 'pdf');
+
+        $uniq = uniqid();
+
+        if(!$paginate) $page = '1/1';
+        else $page = $list['data']->currentPage() . '/' . $list['data']->lastPage(0);
+        
+        $filter = [
+            'page' => $page
+        ];
+
+        $append = [
+            'items' => $data,
+            'id' => $uniq,
+            'filter' => $filter
+        ];
+        if($type === 'pdf') {
+            $pdf = PDF::loadView('report.pdf.department', $append);
+    
+            $pdf->setOptions([
+                'defaultPaperSize' => 'a4',
+                'defaultFont' => 'Times New Roman'
+            ]);
+    
+            return $pdf->stream('Daftar_Departemen_'. $uniq . '.pdf');
+        } else {
+            return Excel::download(new PrintReport('department', $append), 'Daftar_Departemen_'. $uniq . '.xlsx');
+        }
+    }
+
+    public function print_specialist(Request $request) {
+        $cont = new SpecialistController;
+        $list = $cont->List($request, true)->original;
+
+        $paginate = $request->query('paginate');
+
+        if($paginate=='true') $data = $list['data']->items();
+        else $data = $list['data'];
+
+        $type = $request->query('print_type', 'pdf');
+
+        $uniq = uniqid();
+
+        if(!$paginate) $page = '1/1';
+        else $page = $list['data']->currentPage() . '/' . $list['data']->lastPage(0);
+        
+        $filter = [
+            'page' => $page
+        ];
+
+        $append = [
+            'items' => $data,
+            'id' => $uniq,
+            'filter' => $filter
+        ];
+
+        if($type === 'pdf') {
+            $pdf = PDF::loadView('report.pdf.specialist', $append);
+    
+            $pdf->setOptions([
+                'defaultPaperSize' => 'a4',
+                'defaultFont' => 'Times New Roman'
+            ]);
+    
+            return $pdf->stream('Daftar_Spesialis_'. $uniq . '.pdf');
+        } else {
+            return Excel::download(new PrintReport('specialist', $append), 'Daftar_Spesialis_'. $uniq . '.xlsx');
         }
     }
 }
