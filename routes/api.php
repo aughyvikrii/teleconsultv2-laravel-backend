@@ -220,6 +220,8 @@ Route::group(['middleware' => 'access'],  function(){
         Route::group(['prefix' => 'report'], function(){
             Route::get('finance', [ReportController::class, 'finance']);
         });
+
+        Route::post('zoom_verification', [HomeController::class, 'zoom_verification']);
     });
 });
 

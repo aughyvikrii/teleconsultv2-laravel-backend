@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use \App\Models\{News, Appointment, Person, User};
+use Illuminate\Support\Facades\Validator;
+use \App\Models\{News, Appointment, Person, User, Bill, ZoomAccount};
+use App\Libraries\{Zoom as ZoomLib};
 use DB;
 
 class HomeController extends Controller
@@ -131,26 +133,36 @@ class HomeController extends Controller
 
         foreach($list as $item) {
 
+            $branch_total = @intval($branches[$item->bid]['total']) + 1;
             $branches[$item->bid] = [
-                'name' => $item->branch,
-                'total' => @intval($branches[$item->bid]) + 1
+                'name' => $item->branch . " [$branch_total]",
+                'total' => $branch_total
             ];
 
+            $department_total = @intval($departments[$item->deid]['total']) + 1;
             $departments[$item->deid] = [
-                'name' => $item->department,
-                'total' => @intval($departments[$item->deid]) + 1
+                'name' => $item->department . " [$department_total]",
+                'total' => $department_total
             ];
 
+            $specialist_total = @intval($specialists[$item->sid]['total']) + 1;
             $specialists[$item->sid] = [
-                'name' => $item->specialist,
-                'total' => @intval($specialists[$item->sid]) + 1
+                'name' => $item->specialist . " [$specialist_total]",
+                'total' => $specialist_total
             ];
 
+            $doctor_total = @intval($doctors[$item->doctor_id]['total']) + 1;
             $doctors[$item->doctor_id] = [
-                'name' => $item->doctor,
-                'total' => @intval($doctors[$item->doctor_id]) + 1
+                'name' => $item->doctor . " [$doctor_total]",
+                'total' => $doctor_total
             ];
         }
+
+        array_multisort(array_column($branches, 'total'), SORT_DESC, $branches);
+        array_multisort(array_column($departments, 'total'), SORT_DESC, $departments);
+        array_multisort(array_column($specialists, 'total'), SORT_DESC, $specialists);
+        array_multisort(array_column($doctors, 'total'), SORT_DESC, $doctors);
+
         $branch_chart = $department_chart = $specialist_chart = $doctor_chart = [
             ['Nama', 'Jumlah']
         ];
@@ -178,6 +190,19 @@ class HomeController extends Controller
                 $item['name'], $item['total']
             ];
         }
+
+        $total_patient = Person::selectRaw('COUNT(pid) as total')
+            ->whereRaw("TO_CHAR(persons.created_at, 'YYYY-MM') BETWEEN ? AND ?", [$start_date, $end_date])
+            ->patient()
+            ->first();
+
+        $total_appointment = Appointment::selectRaw('COUNT(aid) as total')
+            ->whereRaw("TO_CHAR(appointments.created_at, 'YYYY-MM') BETWEEN ? AND ?", [$start_date, $end_date])
+            ->first();
+
+        $total_income = Bill::selectRaw('SUM(amount) as total')
+            ->whereRaw("status = ? AND TO_CHAR(bills.created_at, 'YYYY-MM') BETWEEN ? AND ?", ['paid', $start_date, $end_date])
+            ->first();
 
         return response()->json([
             'status' => true,
@@ -209,8 +234,76 @@ class HomeController extends Controller
                         'subtitle' => $start_date . ' s/d '. $end_date,
                         'data' => $doctor_chart
                     ],
-                ]
+                ],
+                'cards' => [
+                    'user' => $total_patient->total,
+                    'appointment' => $total_appointment->total,
+                    'income' => $total_income->total
+                ],
             ]
+        ]);
+    }
+
+    public function zoom_verification(Request $request) {
+        $valid = Validator::make($request->all(), [
+            'zoom_api_key' => 'required',
+            'zoom_api_secret'  => 'required',
+            'zoom_jwt_token' => 'required',
+        ], [
+            'zoom_api_key.required' => 'Masukan zoom api key',
+            'zoom_api_secret.required' => 'Masukan zoom api secret',
+            'zoom_jwt_token.required' => 'Masukan zoom jwt token'
+        ]);
+
+        if($valid->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Kesalahan data',
+                'errors' => $valid->errors()
+            ]);
+        }
+
+        $zoomAccount = ZoomAccount::where('api_key', $request->zoom_api_key)->first();
+
+        if($zoomAccount) {
+            return response()->json([
+                'status' => true,
+                'data' =>  $zoomAccount
+            ]);
+        }
+
+        $zoomLib = new ZoomLib($request->all());
+
+        $userInfo = $zoomLib->userInfo($request->email);
+
+        if(!$userInfo) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Token tidak valid'
+            ]);
+        }
+
+        $zoomAccount = ZoomAccount::create([
+            'account_id' => @$userInfo['account']['id'],
+            'email' =>  @$userInfo['account']['email'],
+            'api_key' => $request->zoom_api_key,
+            'api_secret' => $request->zoom_api_secret,
+            'jwt_token' => $request->zoom_jwt_token,
+            'exp_int' => @$userInfo['token']['exp'],
+            'expire_token' => @$userInfo['token']['exp_date'],
+            'create_id' => auth()->user()->uid
+        ]);
+
+        if(!$zoomAccount) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mendaftarkan token, silahkan coba lagi!',
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' =>  $zoomAccount
         ]);
     }
 }
