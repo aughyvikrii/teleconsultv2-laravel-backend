@@ -263,7 +263,7 @@ class HomeController extends Controller
             ]);
         }
 
-        $zoomAccount = ZoomAccount::where('api_key', $request->zoom_api_key)->first();
+        $zoomAccount = ZoomAccount::where('jwt_token', $request->zoom_jwt_token)->first();
 
         if($zoomAccount) {
             return response()->json([
@@ -283,16 +283,30 @@ class HomeController extends Controller
             ]);
         }
 
-        $zoomAccount = ZoomAccount::create([
-            'account_id' => @$userInfo['account']['id'],
-            'email' =>  @$userInfo['account']['email'],
-            'api_key' => $request->zoom_api_key,
-            'api_secret' => $request->zoom_api_secret,
-            'jwt_token' => $request->zoom_jwt_token,
-            'exp_int' => @$userInfo['token']['exp'],
-            'expire_token' => @$userInfo['token']['exp_date'],
-            'create_id' => auth()->user()->uid
-        ]);
+        if($doctor_id = $request->doctor_id) {
+            $zoomAccount = ZoomAccount::where('pid', $doctor_id)->first();
+            $update = $zoomAccount->update([
+                'account_id' => @$userInfo['account']['id'],
+                'email' =>  @$userInfo['account']['email'],
+                'api_key' => $request->zoom_api_key,
+                'api_secret' => $request->zoom_api_secret,
+                'jwt_token' => $request->zoom_jwt_token,
+                'exp_int' => @$userInfo['token']['exp'],
+                'expire_token' => @$userInfo['token']['exp_date'],
+                'last_update' => date('Y-m-d H:i:s'),
+            ]);
+        } else {
+            $zoomAccount = ZoomAccount::create([
+                'account_id' => @$userInfo['account']['id'],
+                'email' =>  @$userInfo['account']['email'],
+                'api_key' => $request->zoom_api_key,
+                'api_secret' => $request->zoom_api_secret,
+                'jwt_token' => $request->zoom_jwt_token,
+                'exp_int' => @$userInfo['token']['exp'],
+                'expire_token' => @$userInfo['token']['exp_date'],
+                'create_id' => auth()->user()->uid
+            ]);
+        }
 
         if(!$zoomAccount) {
             return response()->json([

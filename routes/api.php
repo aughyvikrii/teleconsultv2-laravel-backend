@@ -21,6 +21,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SoapController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\BillController;
 
 /*
 |--------------------------------------------------------------------------
@@ -213,6 +214,11 @@ Route::group(['middleware' => 'access'],  function(){
     });
 
     Route::group(['middleware' => 'access:admin'], function(){
+
+        Route::group(['prefix' => 'bill'], function(){
+            Route::get('{invoice_id}/detail', [BillController::class, 'Detail']);
+        });
+
         Route::group(['prefix' => 'patient'], function(){
             Route::get('list', [PatientController::class, 'List']);
         });

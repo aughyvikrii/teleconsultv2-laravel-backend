@@ -230,6 +230,15 @@ class Person extends Model
         return Person::create($data);
     }
 
+    public function scopeJoinZoomAccount($query, $type = 'join') {
+        $join = self::JoinType($type);
+        if(!$this->checkJoin($query, 'zoom_accounts')) {
+            $query->$join('zoom_accounts', 'zoom_accounts.pid', '=', 'persons.pid');
+        }
+
+        return $query;
+    }
+
     public function scopePatient($query) {
         return $query->JoinUser('left')
                 ->whereRaw("(users.lid = 3 OR persons.uid IS NULL)");

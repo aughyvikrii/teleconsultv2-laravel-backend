@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use \App\Models\{User, Person, Schedule, Appointment};
+use \App\Models\{User, Person, Schedule, Appointment, ZoomAccount};
 use Auth, DB;
 use Carbon\Carbon;
 use JWTAuth;
@@ -39,7 +39,10 @@ class DoctorController extends Controller
             'fee' => 'required|numeric',
             'start_hour' => 'required|date_format:H:i',
             'end_hour' => 'required|date_format:H:i',
-            'duration' => 'required|numeric'
+            'duration' => 'required|numeric',
+            'zoom_api_key' => 'required',
+            'zoom_api_secret' => 'required',
+            'zoom_jwt_token' => 'required'
         ],[
             'email.required' => 'Masukan alamat email',
             'email.email' => 'Format email tidak valid',
@@ -80,7 +83,11 @@ class DoctorController extends Controller
             'end_hour.required' => 'Masukan jam selesai praktek',
             'end_hour.date_format' => 'Format jam tidak valid',
             'duration.required' => 'Masukan durasi praktek',
-            'duration.numeric' => 'Format durasi hanya berupa angka'
+            'duration.numeric' => 'Format durasi hanya berupa angka',
+
+            'zoom_api_key.required' => 'Masukan API key Zoom',
+            'zoom_api_secret.required' => 'Masukan API  Secret Zoom',
+            'zoom_jwt_token.required' => 'Masukan JWT Token Zoom'
         ]);
 
         if($valid->fails()) {
@@ -171,6 +178,20 @@ class DoctorController extends Controller
             ]);
         }
 
+        $zoomAccount = ZoomAccount::where('jwt_token', $request->zoom_jwt_token)->first();
+
+        if(!$zoomAccount) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Token belum tervalidasi, silahkan validasi token terlebih dahulu',
+            ]);
+        }
+
+        $zoomAccount->update([
+            'pid' => $person->pid,
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
+
         DB::commit();
 
         if($thumbnail = $request->thumbnail) {
@@ -257,8 +278,9 @@ class DoctorController extends Controller
 
     public function Detail($doctor_id) {
         $doctor = Person::joinGender()
+                ->JoinZoomAccount('left')
                 ->selectRaw('persons.pid, persons.display_name, users.email, persons.phone_number, persons.created_at, genders.name as gender, persons.birth_date
-                , persons.birth_place, persons.sid as specialist_id, persons.gid as gender_id')
+                , persons.birth_place, persons.sid as specialist_id, persons.gid as gender_id, zoom_accounts.api_key as zoom_api_key, zoom_accounts.api_secret as zoom_api_secret, zoom_accounts.jwt_token as zoom_jwt_token')
                 ->selectRaw("id_age(persons.birth_date) as age, id_date(persons.birth_date) as birth_date_alt")
                 ->selectRaw("doctor_pic(persons.profile_pic) as profile_pic")
                 ->isDoctor()
@@ -367,6 +389,10 @@ class DoctorController extends Controller
             'gender' => 'required|in:1,2,3',
             'phone_number' => 'required',
             'specialist' => 'required|exists:specialists,sid',
+            
+            'zoom_api_key' => 'required',
+            'zoom_api_secret' => 'required',
+            'zoom_jwt_token' => 'required'
         ],[
             'birth_date_d.required' => 'Masukan tanggal lahir',
             'birth_date_d.numeric' => 'Tanggal lahir berupa angka',
@@ -388,8 +414,13 @@ class DoctorController extends Controller
             'phone_number.required' => 'Masukan nomor telepon',
             'specialist.required' => 'Pilih spesialis dokter',
             'specialist.exists' => 'Spesialis tidak valid',
+            
+            
+            'zoom_api_key.required' => 'Masukan API key Zoom',
+            'zoom_api_secret.required' => 'Masukan API  Secret Zoom',
+            'zoom_jwt_token.required' => 'Masukan JWT Token Zoom'
         ]);
-
+        
         if($valid->fails()) {
             return response()->json([
                 'status' => false,
@@ -468,6 +499,20 @@ class DoctorController extends Controller
                 'message' => 'Gagal update informasi login'
             ]);
         }
+
+        $zoomAccount = ZoomAccount::where('jwt_token', $request->zoom_jwt_token)->first();
+
+        if(!$zoomAccount) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Token belum tervalidasi, silahkan validasi token terlebih dahulu',
+            ]);
+        }
+
+        $zoomAccount->update([
+            'pid' => $doctor->pid,
+            'last_update' => date('Y-m-d H:i:s')
+        ]);
 
         DB::commit();
 
