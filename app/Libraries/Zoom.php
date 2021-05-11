@@ -35,10 +35,21 @@ class Zoom {
 
         if(is_array($person)) $person = (Object) $person;
 
-        $this->userId = @$person->zoom_user_id;
-        $this->apiKey = @$person->zoom_api_key;
-        $this->apiSecret = @$person->zoom_api_secret;
-        $this->jwtToken = @$person->zoom_jwt_token;
+        // Account ID
+        if(@$person->zoom_user_id) $this->userId = @$person->zoom_user_id;
+        else if (@$person->account_id) $this->userId = @$person->account_id;
+
+        // ApiKey
+        if(@$person->zoom_api_key) $this->apiKey = @$person->zoom_api_key;
+        else if(@$person->api_key) $this->apiKey = @$person->api_key;
+
+        // ApiSecret
+        if(@$person->zoom_api_secret) $this->apiSecret = @$person->zoom_api_secret;
+        else if(@$person->api_secret) $this->apiSecret = @$person->api_secret;
+
+        // JWTToken
+        if(@$person->zoom_jwt_token) $this->jwtToken = @$person->zoom_jwt_token;
+        else if(@$person->jwt_token) $this->jwtToken = @$person->jwt_token;
     }
     
     public function error() { return $this->error; }
@@ -104,5 +115,18 @@ class Zoom {
             'account' => $account,
             'token'=> $tokenInfo
         ];
+    }
+
+    public function createMeeting($postData=array()) {
+
+        $request = Http::withHeaders([
+            'Authorization' => "Bearer {$this->jwtToken}"
+        ])->post("https://api.zoom.us/v2/users/{$this->userId}/meetings", $postData);
+
+        $response = $request->json();
+
+        if(!$response) return false;
+
+        return $response;
     }
 }

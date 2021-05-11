@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use \App\Libraries\{Midtrans, Whatsapp};
-use \App\Models\{Branch, Bill, Appointment, Person, Department, Schedule};
+use \App\Models\{Branch, Bill, Appointment, Person, Department, Schedule, Outbox};
 use \Carbon\Carbon;
 use DB;
 
@@ -220,7 +220,13 @@ class MidtransController extends Controller
         $message_patient .= "Terimakasih\n\n";
         $message_patient .= "{$branch->name}";
 
-        Whatsapp::send($patient->phone_number,$message_patient);
+        // Whatsapp::send($patient->phone_number,$message_patient);
+        Outbox::create([
+            'destination' => $patient->phone_number,
+            'message' => $message_patient,
+            'status' => 'pending',
+            'created_id' => '0'
+        ]);
 
         $message_doctor = "Hallo {$patient->first_name},\n\n";
         $message_doctor .= "Anda memiliki perjanjian telekonsultasi pada:\n\n";
@@ -240,7 +246,13 @@ class MidtransController extends Controller
         $message_doctor .= "Terimakasih\n\n";
         $message_doctor .= "{$branch->name}";
 
-        Whatsapp::send($patient->phone_number,$message_doctor);
+        // Whatsapp::send($doctor->phone_number,$message_doctor);
+        Outbox::create([
+            'destination' => $doctor->phone_number,
+            'message' => $message_doctor,
+            'status' => 'pending',
+            'created_id' => '0'
+        ]);
 
         echo "ok: pendaftaran dikonfirmasi";
         exit();

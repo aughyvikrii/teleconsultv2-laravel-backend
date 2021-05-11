@@ -27,6 +27,7 @@ class Appointment extends Model
         'branch_json' => 'json',
         'bill_json' => 'json',
         'is_active' => 'bool',
+        'zoom_account_json' => 'json'
     ];
 
     public function scopeSelectForUser($query) {
@@ -201,6 +202,14 @@ class Appointment extends Model
 
         if(!$this->checkJoin($query, 'pharmacies')) {
             return $query->$join('pharmacies', 'pharmacies.aid', '=', 'appointments.aid');
+        }
+
+        return $query;
+    }
+
+    public function scopeJoinZoomMeeting($query) {
+        if(!$this->checkJoin($query,  'zoom_meetings')) {
+            $query->leftjoin('zoom_meetings', 'zoom_meetings.aid', '=', 'appointments.aid');
         }
 
         return $query;

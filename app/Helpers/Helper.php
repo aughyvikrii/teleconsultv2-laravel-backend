@@ -173,7 +173,7 @@ if(!function_exists('person_level')) {
 if(!function_exists('is_admin')) {
     function is_admin($person=null) {
         if(!$person) {
-            $level = auth()->user()->lid;
+            $level = @auth()->user()->lid;
         } else {
             $level = person_level($person);
         }
@@ -184,7 +184,7 @@ if(!function_exists('is_admin')) {
 if(!function_exists('is_doctor')) {
     function is_doctor($person=null) {
         if(!$person) {
-            $level = auth()->user()->lid;
+            $level = @auth()->user()->lid;
         } else {
             $level = person_level($person);
         }
@@ -195,7 +195,7 @@ if(!function_exists('is_doctor')) {
 if(!function_exists('is_patient')) {
     function is_patient($person=null) {
         if(!$person) {
-            $level = auth()->user()->lid;
+            $level = @auth()->user()->lid;
         } else {
             $level = person_level($person);
         }

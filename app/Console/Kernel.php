@@ -25,6 +25,12 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        // Mengirim pesan whatsapp pending di outbox
+        $schedule->command('cronjob:send_wa')->everyMinute();
+
+        // Membuat zoom meeting
+        $schedule->command('cronjob:generate_zoom')->everyMinute();
     }
 
     /**

@@ -310,7 +310,8 @@ class AppointmentController extends Controller
 
     public function Detail($appointment_id, Request $request) {
         $data = Appointment::joinFullInfo()
-                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key, appointments.start_consul, appointments.end_consul, false as can_re_register")
+                ->selectRaw("appointments.*,ftime(appointments.consul_time) as consul_time, patient.full_name as patient_name, doctor.display_name as doctor_name, doctor.pid as doctor_id, doctor_pic(doctor.profile_pic) as doctor_pic, patient_pic(patient.profile_pic) as patient_pic, departments.deid as department_id, departments.name as department, branches.bid as branch_id, branches.name as branch, id_age(patient.birth_date) as age, bills.expired_at as payment_expired_at, schedules.duration, bills.amount as fee, id_date(appointments.consul_date) as id_consul_date, bills.midtrans_snaptoken as snaptoken, branches.midtrans_client_key as payment_key, appointments.start_consul, appointments.end_consul, false as can_re_register, zoom_meetings.join_url")
+                ->JoinZoomMeeting()
                 ->where('appointments.aid', $appointment_id);
 
         if(is_patient()) {
@@ -320,7 +321,7 @@ class AppointmentController extends Controller
             ->JoinLaboratory('left')
             ->JoinRadiology('left')
             ->JoinPharmacy('left')
-            ->selectRaw('soaps.subjective, soaps.objective, soaps.assesment, soaps.plan, laboratories.recommendation as lab_recom, laboratories.diagnosis as lab_diagnosis, laboratories.allergy as lab_allergy, radiologies.recommendation as rad_recom, radiologies.diagnosis as rad_diagnosis, radiologies.allergy as rad_allergy, pharmacies.recommendation as phar_recom, pharmacies.diagnosis as phar_diagnosis, pharmacies.allergy as phar_allergy')
+            ->selectRaw('soaps.subjective, soaps.objective, soaps.assesment, soaps.plan, laboratories.recommendation as lab_recom, laboratories.diagnosis as lab_diagnosis, laboratories.allergy as lab_allergy, radiologies.recommendation as rad_recom, radiologies.diagnosis as rad_diagnosis, radiologies.allergy as rad_allergy, pharmacies.recommendation as phar_recom, pharmacies.diagnosis as phar_diagnosis, pharmacies.allergy as phar_allergy, zoom_meetings.start_url')
             ->doctorUID(auth()->user()->uid);
         }
         else if (is_admin()) {

@@ -22,6 +22,7 @@ use App\Http\Controllers\SoapController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\BillController;
+use App\Http\Controllers\FileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,11 +54,14 @@ Route::group(['prefix' => 'auth'], function(){
     Route::get('user', [AuthController::class, 'User'])->name('User')->middleware('jwt.verify');
 });
 
-Route::match(['POST', 'GET'], '/living_area', [PersonController::class, 'living_area'])->name('LivingArea');
+
+// Route::match(['POST', 'GET'], 'dashboard', [HomeController::class, 'Dashboard']);
 
 Route::group(['middleware' => 'access'],  function(){
 
-    Route::match(['POST', 'GET'], 'dashboard', [HomeController::class, 'Dashboard']);
+    Route::match(['POST', 'GET'], 'dashboard', [HomeController::class, 'Dashboard'])->name('Dashboard');
+    
+    Route::match(['POST', 'GET'], '/living_area', [PersonController::class, 'living_area'])->name('LivingArea');
 
     Route::group(['prefix' => 'appointment'], function(){
         Route::post('create', [AppointmentController::class, 'Create'])->name('AppointmentCreate');
@@ -200,7 +204,7 @@ Route::group(['middleware' => 'access'],  function(){
     });
 
     Route::group(['prefix' => 'news'], function(){
-        Route::post('list', [NewsController::class, 'List']);
+        Route::match(['GET', 'POST'],'list', [NewsController::class, 'List']);
         Route::get('{id}', [NewsController::class, 'Detail']);
     });
 
@@ -228,6 +232,11 @@ Route::group(['middleware' => 'access'],  function(){
         });
 
         Route::post('zoom_verification', [HomeController::class, 'zoom_verification']);
+
+        Route::group(['prefix' => 'file'], function(){
+            Route::post('create', [FileController::class, 'create']);
+            Route::post('slice_upload', [FileController::class, 'sliceUpload']);
+        });
     });
 });
 
@@ -235,12 +244,12 @@ Route::group([ 'prefix' => 'v1/midtrans' ], function(){
     Route::any('notification', [MidtransController::class, 'Notification']);
 });
 
-Route::any('testing', function(){
-    $res = \App\Models\Schedule::selectRaw('persons.display_name as doctor, branches.name as branch,
-            departments.name as department, doctor_pic(persons.profile_pic) as doctor_pic')
-            ->ScheduleGroup()
-            ->joinFullInfo('join', false)
-            ->groupBy(DB::Raw("persons.display_name, branches.name, departments.name, persons.profile_pic"))
-            ->get();
-    return response()->json($res);
-});
+// Route::any('testing', function(){
+//     $res = \App\Models\Schedule::selectRaw('persons.display_name as doctor, branches.name as branch,
+//             departments.name as department, doctor_pic(persons.profile_pic) as doctor_pic')
+//             ->ScheduleGroup()
+//             ->joinFullInfo('join', false)
+//             ->groupBy(DB::Raw("persons.display_name, branches.name, departments.name, persons.profile_pic"))
+//             ->get();
+//     return response()->json($res);
+// });

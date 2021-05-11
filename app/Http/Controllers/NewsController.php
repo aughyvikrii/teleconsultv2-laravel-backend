@@ -9,7 +9,8 @@ use DB;
 class NewsController extends Controller
 {
     public function List(Request $request) {
-        $list = News::selectRaw("nid as news_id, title, viewer_count, base_url(CONCAT('storage/image/news/thumbnail/', thumbnail)) as thumbnail, id_date(created_at) as date")
+        $list = News::JoinCreator()
+                ->selectRaw("nid as news_id, title, viewer_count, base_url(CONCAT('storage/image/news/thumbnail/', thumbnail)) as thumbnail, id_date(news.created_at) as date, creator.full_name as creator")
                 ->paginate(25);
 
         return response()->json([

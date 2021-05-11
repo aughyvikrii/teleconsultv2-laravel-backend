@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use \App\Models\{News, Appointment, Person, User, Bill, ZoomAccount};
+use \App\Models\{News, Appointment, Person, User, Bill, ZoomAccount, Schedule};
 use App\Libraries\{Zoom as ZoomLib};
 use DB;
 
@@ -13,7 +13,30 @@ class HomeController extends Controller
     public function Dashboard(Request $request) {
         if(is_admin()) return $this->AdminDashboard($request);
         else if(is_doctor() && $request->input('doctor_dashboard')) return $this->DoctorDashboard($request);
-        else return $this->PatientDashboard($request);
+        else if(is_patient()) return $this->PatientDashboard($request);
+        else return $this->homePage($request);
+    }
+
+    public function homePage(Request $request) {
+        $news = News::selectRaw("nid as news_id, base_url(CONCAT('storage/image/news/thumbnail/', thumbnail)) as thumbnail, title")
+        ->orderBy('nid', 'DESC')
+        ->limit(5)
+        ->get();
+
+        $list = Schedule::selectRaw('persons.display_name as name, branches.name as branch,
+                departments.name as department, doctor_pic(persons.profile_pic) as profile_pic')
+                ->ScheduleGroup()
+                ->joinFullInfo('join', false)
+                ->groupBy(DB::Raw("persons.display_name, branches.name, departments.name, persons.profile_pic"))
+                ->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'news' => $news,
+                'schedules' => $list
+            ]
+        ]);
     }
 
     public function PatientDashboard(Request $request) {
