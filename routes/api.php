@@ -63,6 +63,11 @@ Route::group(['middleware' => 'access'],  function(){
     
     Route::match(['POST', 'GET'], '/living_area', [PersonController::class, 'living_area'])->name('LivingArea');
 
+    Route::group(['prefix' => 'bills'], function(){
+        Route::get('/', [BillController::class, 'list'])->name('bill.list');
+        Route::get('{bill_id}', [BillController::class, 'detail'])->name('bill.detail');
+    });
+
     Route::group(['prefix' => 'appointment'], function(){
         Route::post('create', [AppointmentController::class, 'Create'])->name('AppointmentCreate');
         Route::post('re_register', [AppointmentController::class, 'ReRegister'])->name('AppointmentReRegister');

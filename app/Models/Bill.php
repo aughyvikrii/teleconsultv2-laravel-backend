@@ -117,4 +117,10 @@ class Bill extends Model
 
         return $query;
     }
+
+    public function scopeMyFamily($query) {
+        $user_id = auth()->user()->uid;
+        return $query->join('persons as fam', 'fam.fmid', '=', 'patient.fmid')
+            ->whereRaw('fam.uid = ?', [$user_id]);
+    }
 }
