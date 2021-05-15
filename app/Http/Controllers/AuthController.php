@@ -10,7 +10,7 @@ use JWTAuth, Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 use App\Libraries\Whatsapp;
-use App\Models\{User, Person, FamilyMaster, FamilyTree};
+use App\Models\{User, Person, FamilyMaster, FamilyTree, Outbox};
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ConfirmEmail;
@@ -229,14 +229,14 @@ class AuthController extends Controller
         $contact = $request->contact;
         if(preg_match('/@/', $contact)) {
             $type = 'email';
-            $user = User::selectRaw('users.email, users.code, users.verified_at')
+            $user = User::selectRaw('users.email, users.code, users.verified_at, users.lid')
             ->where('email', $contact)
             ->first();
         }
         else {
             $type = 'phone_number';
             $contact = format_phone($contact);
-            $user = User::selectRaw('users.email, users.code, users.verified_at')
+            $user = User::selectRaw('users.email, users.code, users.verified_at, users.lid')
             ->where('phone_number', $contact)
             ->first();
         }
@@ -275,8 +275,8 @@ class AuthController extends Controller
         }
 
         $redirect = '/home';
-        if($user->lid === '1') $redirect = '/admin';
-        else if ($user->lid === '2') $redirect = '/doctor';
+        if($user->lid == '1') $redirect = '/admin';
+        else if ($user->lid == '2') $redirect = '/doctor';
 
         $user = User::joinPerson()
         ->selectRaw('users.code, users.email, users.phone_number
@@ -606,6 +606,76 @@ class AuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Berhasil update password',
+        ]);
+    }
+
+    public function resetPassword(Request $request) {
+        $valid = Validator::make($request->all(), [
+            'contact' => 'required',
+        ], [
+            'contact.required' => 'Masukan email/nomor telepon'
+        ]);
+
+        if(!$valid) {
+            return response()->json([
+                'status'  => false,
+                'message'  => 'Parameter tidak tepat',
+                'errors'  => $valid->errors()
+            ]);
+        }
+
+        $user = User::where('email', $request->contact)->first();
+        $method = 'email';
+
+        if(!$user) {
+            $phone_number = format_phone($request->contact);
+            if($phone_number) {
+                $user = User::where('phone_number', $phone_number)->first();
+                $method = 'phone_number';
+                if(!$user) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Akun tidak ditemukan',
+                    ]);
+                }
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Akun tidak ditemukan',
+                ]);
+            }
+        }
+
+        $newPassword = rand(100000, 999999);
+
+        $update = $user->update([
+            'password' => bcrypt($newPassword),
+            'last_update' =>  date('Y-m-d H:i:s')
+        ]);
+
+        if($method == 'phone_number') {
+
+            $message = "Hallo {$user->full_name}";
+            $message .= "\nBerikut adalah password baru untuk login aplikasi PitKonsul";
+            $message .= "\n\n";
+            $message .= "*Email*: {$user->email}\n";
+            $message .= "*Nomor Telepon*: {$user->phone_number}\n";
+            $message .= "*Password*: {$newPassword}";
+            $message .= "\n\n";
+            $message .= "Anda dapat login menggunakan kombinasi email & password / nomor telepon & password";
+
+            Outbox::create([
+                'destination' => $phone_number,
+                'message' => $message,
+                'status' => 'pending',
+                'create_id' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Password baru berhasil dikirim'
         ]);
     }
 }

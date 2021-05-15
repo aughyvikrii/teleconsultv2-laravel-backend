@@ -52,6 +52,7 @@ Route::group(['prefix' => 'auth'], function(){
     Route::post('login', [AuthController::class, 'Login'])->name('Login');
     Route::post('resend_link_verif', [AuthController::class, 'ResendLinkVerification'])->name('ResendLinkVerification');
     Route::get('user', [AuthController::class, 'User'])->name('User')->middleware('jwt.verify');
+    Route::post('reset_password', [AuthController::class, 'resetPassword'])->name('reset.password');
 });
 
 
