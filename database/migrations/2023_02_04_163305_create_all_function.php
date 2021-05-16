@@ -265,15 +265,16 @@ class CreateAllFunction extends Migration
             ;
         ');
 
-        DB::unprepared("CREATE OR REPLACE FUNCTION ftime(the_time time)
+        DB::unprepared('
+        CREATE OR REPLACE FUNCTION ftime(the_time time)
             RETURNS character varying
             LANGUAGE plpgsql
             AS $function$
                 BEGIN
-                    return to_char(the_time, 'HH24:MI');
+                    return to_char(the_time, \'HH24:MI\');
                 END;
             $function$
-        ;");
+        ;');
     }
 
     /**
