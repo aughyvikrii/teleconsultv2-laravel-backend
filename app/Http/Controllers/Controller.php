@@ -89,7 +89,9 @@ class Controller extends BaseController
         $response = self::getUser();
         $response = $response->original;
         
-        if(!$response['status']) return;
+        if(!$response['status']) {
+            return redirect('/');
+        }
         $user = $response['user'];
 
         if($user->lid == '1') {
