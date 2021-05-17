@@ -212,6 +212,12 @@ Route::group(['middleware' => 'access'],  function(){
     Route::group(['prefix' => 'news'], function(){
         Route::match(['GET', 'POST'],'list', [NewsController::class, 'List']);
         Route::get('{id}', [NewsController::class, 'Detail']);
+
+        Route::group(['middleware' => 'access:admin'], function(){
+            Route::post('create', [NewsController::class, 'create'])->name('news.create');
+            Route::put('update/{id}', [NewsController::class, 'update'])->name('news.update');
+            Route::delete('delete/{id}', [NewsController::class, 'delete'])->name('news.delete');
+        });
     });
 
     Route::group(['prefix' => 'doctor', 'middleware' => 'access:doctor'], function(){

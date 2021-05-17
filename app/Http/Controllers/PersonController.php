@@ -436,7 +436,7 @@ class PersonController extends Controller
 
         if(!$pid) { // User utama
             if( $emailUsed && @$emailUsed->uid != $user_id) $validEmail = false;
-            if($phoneUsed->pid != $person->pid) $validPhone = false;
+            if( $phoneUsed && @$phoneUsed->pid != $person->pid) $validPhone = false;
         } else if ($phoneUsed) {
             if(@$phoneUsed->pid != $user->uid) $validPhone = false;
         }
