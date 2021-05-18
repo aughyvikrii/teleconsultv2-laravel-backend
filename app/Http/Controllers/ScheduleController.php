@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Auth, DB;
 use \Carbon\Carbon;
-use \App\Models\{Person, Schedule};
+use \App\Models\{Person, Schedule, Appointment};
 use \App\Libraries\Schedule as ScheduleLib;
 
 class ScheduleController extends Controller
@@ -87,6 +87,8 @@ class ScheduleController extends Controller
         //     if(!is_array($weekday)) $weekday = [$weekday];
         //     $list->whereIn('schedules.weekday', $weekday);
         // }
+
+        $list->where('schedules.is_active', true);
 
         if(!$request->paginate) $list = $list->get();
         else {
@@ -316,6 +318,37 @@ class ScheduleController extends Controller
         return response()->json([
             'status' => true,
             'data' => $list_time
+        ]);
+    }
+
+    public function delete ($schedule_id) {
+        $schedule_id = @intval($schedule_id);
+
+        $schedule = Schedule::find($schedule_id);
+
+        if(!$schedule || !$schedule_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Jadwal tidak ditemukan'
+            ]);
+        }
+
+        $update = $schedule->update([
+            'delete_id' => auth()->user()->uid,
+            'deleted_at' => date('Y-m-d H:i:s'),
+            'is_active' => false
+        ]);
+
+        if(!$update) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menghapus data'
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Berhasil menghapus data'
         ]);
     }
 }

@@ -170,6 +170,9 @@ Route::group(['middleware' => 'access'],  function(){
         Route::match(['GET', 'POST'], 'date/{schedule_id}', [ScheduleController::class, 'ScheduleDate'])->name('ScheduleDate');
         Route::match(['GET', 'POST'], 'time/{schedule_id}', [ScheduleController::class, 'ScheduleTime'])->name('ScheduleTime');
         Route::put('{id}', [ScheduleController::class, 'Update'])->name('ScheduleUpdate');
+        Route::group(['middleware' => 'access:admin'], function(){
+            Route::delete('{id}', [ScheduleController::class, 'delete'])->name('schedule.delete');
+        });
     });
     
     Route::group(['prefix' => 'religion'], function(){

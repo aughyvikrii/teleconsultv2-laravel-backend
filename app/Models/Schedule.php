@@ -23,7 +23,8 @@ class Schedule extends Model
         'thursday' => 'json',
         'friday' => 'json',
         'saturday' => 'json',
-        'sunday' => 'json'
+        'sunday' => 'json',
+        'is_active' => 'boolean'
     ];
 
     public function scopeJoinFullInfo($query, $type = 'join', $joinCreator=true) {
