@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Auth, DB, URL;
-use \App\Models\{Schedule, Person, Appointment, Bill};
+use \App\Models\{Schedule, Person, Appointment, Bill, Outbox};
 use \App\Libraries\Schedule as LSchedule;
 use \App\Libraries\Midtrans;
 use App\Libraries\Whatsapp;
@@ -196,7 +196,14 @@ class AppointmentController extends Controller
             $message .= "\n\nJika anda tidak melakukan pendaftaran, abaikan pesan ini.";
             $message .= "\n\nTerimakasih.";
             
-            $send = Whatsapp::send($patient->phone_number,$message);
+            // $send = Whatsapp::send($patient->phone_number,$message);
+            Outbox::create([
+                'destination' =>  $patient->phone_number,
+                'message' => $message,
+                'status' => 'pending',
+                'create_id' => auth()->user()->uid,
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
         } catch (Exception $e) {
             $error = $e->getMessage();
         }
@@ -561,7 +568,14 @@ class AppointmentController extends Controller
             $message .= "\n\nJika anda tidak melakukan pendaftaran, abaikan pesan ini.";
             $message .= "\n\nTerimakasih.";
             
-            $send = Whatsapp::send($patient->phone_number,$message);
+            // $send = Whatsapp::send($patient->phone_number,$message);
+            Outbox::create([
+                'destination' =>  $patient->phone_number,
+                'message' => $message,
+                'status' => 'pending',
+                'create_id' => auth()->user()->uid,
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
         } catch (Exception $e) {
             $error = $e->getMessage();
         }
