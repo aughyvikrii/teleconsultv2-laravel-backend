@@ -308,73 +308,6 @@ class DoctorController extends Controller
     }
 
     /**
-     * Update Doctor Data ////// UNKNOWN AND UNUSED
-     * 
-     * @param   doctor_id int
-     * @param   Request $request
-     * @return  json
-     */
-
-     /*
-    public function Update($doctor_id, Request $request) {
-        $doctor = Doctor::find($doctor_id);
-
-        if(!$doctor) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data dokter tidak ditemukan'
-            ]);
-        }
-
-        $valid = Validator::make($request->all(),[
-            'bid' => 'required|exists:branches',
-            'deid' => 'required|exists:departments',
-            'sid' => 'required|exists:specialists',
-            'fee_consultation' => 'required',
-            'is_active' => 'required|boolean',
-        ],[
-            'bid.required' => 'Pilih cabang',
-            'bid.exists' => 'Pilihan cabang tidak tersedia',
-            'deid.required' => 'Pilih departemen',
-            'deid.exists' => 'Pilihan departemen tidak tersedia',
-            'fee_consultation.required' => 'Masukan tarif konsultasi',
-            'is_active.required' => 'Pilih status dokter',
-            'is_active.boolean' => 'Pilihan status dokter tidak valid',
-            'sid.required' => 'Pilih spesialis',
-            'sid.exists' => 'Pilihan spesialis tidak tersedia'
-        ]);
-
-        if($valid->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data tidak valid',
-                'errors' => $valid->errors(),
-            ], 400);
-        }
-
-        $update = $doctor->update([
-            'bid' => $request->bid,
-            'deid' => $request->deid,
-            'sid' => $request->sid,
-            'fee_consultation' => $request->fee_consultation,
-            'is_active' => $request->is_active,
-        ]);
-
-        if(!$update) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Gagal update dokter, silahkan coba lagi'
-            ], 403);
-        } else {
-            return response()->json([
-                'status' => true,
-                'message' => 'Berhasil update dokter',
-            ]);
-        }
-    }
-    */
-
-    /**
      * Update Doctor Information
      */
 
@@ -515,6 +448,17 @@ class DoctorController extends Controller
         ]);
 
         DB::commit();
+
+        if($thumbnail = $request->thumbnail) {
+            if(!preg_match('/storage/', $thumbnail)) {
+                $image = parent::saveProfilePicture($thumbnail, $doctor->pid.'-');
+                if($image_name = @$image['basename']) {
+                    $doctor->update([
+                        'profile_pic' => $image_name
+                    ]);
+                }
+            }
+        }
 
         return response()->json([
             'status' => true,
