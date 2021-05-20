@@ -25,41 +25,25 @@ Route::view('/auth', 'patient');
 
 Route::get('/verification/account/{code}/{token}', [AuthController::class, 'VerificationAccount']);
 
-// Route::group(['middleware' => 'access'], function(){
-
-//     Route::group(['middleware' => 'access:admin'], function(){
-//         Route::group(['prefix' => 'admin'], function(){
-//             Route::any('/', function(){
-//                 return view('admin');
-//             });
+Route::group(['middleware' => 'access'], function(){
     
-//             Route::get('{any}', function(){
-//                 return view('admin');
-//             })->where('any', '^(?!api).*$');
-//         });
-//     });
-    
-//     Route::group(['middleware' => 'access:doctor'], function(){
-//        Route::group(['prefix' => 'report'], function(){
-//            Route::get('print', [ReportController::class, 'Print']);
-//        }); 
-//     });
+    Route::group(['middleware' => 'access:doctor'], function(){
+       Route::group(['prefix' => 'report'], function(){
+           Route::get('print', [ReportController::class, 'Print']);
+       }); 
+    });
 
-//     Route::group(['middleware' => 'access:admin'], function(){
-//         Route::group(['prefix' => 'report'], function(){
-//             Route::get('finance', [ReportController::class, 'print_finance']);
-//             Route::get('appointment', [ReportController::class, 'print_appointment']);
-//             Route::get('doctor', [ReportController::class, 'print_doctor']);
-//             Route::get('patient', [ReportController::class, 'print_patient']);
-//             Route::get('branch', [ReportController::class, 'print_branch']);
-//             Route::get('department', [ReportController::class, 'print_department']);
-//             Route::get('specialist', [ReportController::class, 'print_specialist']);
-//         });
-//     });
-// });
+    Route::group(['middleware' => 'access:admin'], function(){
+        Route::group(['prefix' => 'report'], function(){
+            Route::get('finance', [ReportController::class, 'print_finance']);
+            Route::get('appointment', [ReportController::class, 'print_appointment']);
+            Route::get('doctor', [ReportController::class, 'print_doctor']);
+            Route::get('patient', [ReportController::class, 'print_patient']);
+            Route::get('branch', [ReportController::class, 'print_branch']);
+            Route::get('department', [ReportController::class, 'print_department']);
+            Route::get('specialist', [ReportController::class, 'print_specialist']);
+        });
+    });
+});
 
-// Route::get('{any}', function () {
-//     return view('welcome');
-// })->where('any', '^(?!api).*$');
-
-Route::get('{any}', [Controller::class, 'index_mapping'])->where('any', '^(?!api).*$');
+Route::any('{any}', [Controller::class, 'index_mapping'])->where('any', '^(?!api).*$');
