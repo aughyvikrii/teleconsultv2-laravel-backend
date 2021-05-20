@@ -4,9 +4,8 @@
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-        <meta name="author" content="zytheme" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <meta name="description" content="Multi-purpose Makerting html5 landing page" />
+        <meta name="description" content="Telekonsultasi dokter indonesia, Telekonsultasi Medis" />
         <link href="assets/images/favicon/favicon.png" rel="icon" />
 
         <link href="fonts.googleapis.com/css.css" rel="stylesheet" type="text/css" />
