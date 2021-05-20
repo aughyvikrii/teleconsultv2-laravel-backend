@@ -301,6 +301,10 @@ class AppointmentController extends Controller
         $patient->when($statuses, function($query) use ($statuses){
             $query->whereIn('appointments.status', $statuses);
         });
+
+        if(is_patient() || is_doctor()) {
+            $patient->MyFamily();
+        }
         
         if($request->query('paginate')=='true') $list = $patient->paginate($request->query('data_per_page', 10));
         else $list = $patient->get();
