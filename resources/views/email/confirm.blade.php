@@ -10,6 +10,8 @@
     Hallo {{$name}},<br><br>
     terimakasih telah mendaftar di aplikasi {{config('app.name')}} <br>
     Berikut adalah link konfirmasi akun anda: <br><br>
+    <a href="{{ $link }}">Klik di sini</a> <br><br>
+    Atau salin link di bawah ini <br><br>
     {{ $link }} <br><br>
     Jika anda tidak melakukan pendaftaran, abaikan pesan ini. <br>
     Terimakasih.
